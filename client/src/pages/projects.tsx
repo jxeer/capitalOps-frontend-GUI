@@ -50,8 +50,8 @@ export default function Projects() {
                     <FolderKanban className="h-5 w-5 text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <CardTitle className="text-base truncate">{asset?.name || "Unknown Asset"}</CardTitle>
-                    <p className="text-xs text-muted-foreground">{project.phase} | {asset?.location}</p>
+                    <CardTitle className="text-base truncate">{(project as any).assetName || asset?.name || "Unknown Asset"}</CardTitle>
+                    <p className="text-xs text-muted-foreground">{project.phase} | {asset?.location || ""}</p>
                   </div>
                 </div>
                 <Badge variant="secondary" className={getStatusColor(project.status)}>

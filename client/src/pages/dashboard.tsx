@@ -127,13 +127,14 @@ export default function Dashboard() {
           <CardContent className="space-y-4">
             {deals?.map((deal) => {
               const project = projects?.find(p => p.id === deal.projectId);
+              const dealName = (deal as any).projectName || project?.phase || deal.phase || "Unknown";
               const progress = deal.capitalRequired > 0 ? Math.round((deal.capitalRaised / deal.capitalRequired) * 100) : 0;
               return (
                 <div key={deal.id} className="space-y-2 p-3 rounded-md bg-accent/30" data-testid={`deal-row-${deal.id}`}>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <Handshake className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="text-sm font-medium truncate">{project?.phase || "Unknown"}</span>
+                      <span className="text-sm font-medium truncate">{dealName}</span>
                       <Badge variant="secondary" className={getStatusColor(deal.status)}>
                         {deal.status}
                       </Badge>
@@ -226,7 +227,7 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <FolderKanban className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="text-sm font-medium truncate">{project.phase}</span>
+                      <span className="text-sm font-medium truncate">{(project as any).assetName || project.phase}</span>
                     </div>
                     <Badge variant="secondary" className={getStatusColor(project.status)}>
                       {project.status}

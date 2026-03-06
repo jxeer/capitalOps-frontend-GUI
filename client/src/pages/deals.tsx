@@ -74,8 +74,8 @@ export default function Deals() {
                     <Handshake className="h-5 w-5 text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <CardTitle className="text-base truncate">{asset?.name || "Unknown"} - {deal.phase}</CardTitle>
-                    <p className="text-xs text-muted-foreground">{asset?.location} | {deal.returnProfile}</p>
+                    <CardTitle className="text-base truncate">{(deal as any).projectName || asset?.name || "Unknown"} - {deal.phase}</CardTitle>
+                    <p className="text-xs text-muted-foreground">{asset?.location || ""} {asset?.location ? "|" : ""} {deal.returnProfile}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
