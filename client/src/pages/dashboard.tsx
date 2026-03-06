@@ -9,6 +9,8 @@ import {
   Handshake,
   TrendingUp,
   ArrowRight,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +23,12 @@ import { Link } from "wouter";
 import type { Deal, Project, RiskFlag, Allocation, Investor } from "@shared/schema";
 
 export default function Dashboard() {
+  const { data: backendStatus } = useQuery<{
+    connected: boolean;
+    url: string | null;
+    mode: string;
+  }>({ queryKey: ["/api/backend-status"] });
+
   const { data: stats, isLoading: statsLoading } = useQuery<{
     totalAssets: number;
     activeProjects: number;
@@ -62,7 +70,21 @@ export default function Dashboard() {
       <PageHeader
         title="Portfolio Overview"
         description="Coral Capital Portfolio performance and operations summary"
-      />
+      >
+        {backendStatus && (
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium ${
+            backendStatus.connected
+              ? "bg-chart-2/15 text-chart-2"
+              : "bg-chart-3/15 text-chart-3"
+          }`} data-testid="text-backend-status">
+            {backendStatus.connected ? (
+              <><Wifi className="h-3 w-3" /> Backend Connected</>
+            ) : (
+              <><WifiOff className="h-3 w-3" /> Local Mode</>
+            )}
+          </div>
+        )}
+      </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard

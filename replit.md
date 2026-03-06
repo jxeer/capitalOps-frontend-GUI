@@ -8,24 +8,31 @@ CapitalOps is a capital + governance operating layer for real estate development
 
 ## Architecture
 - **Frontend**: React + TypeScript with Vite, TanStack Query, wouter routing, shadcn/ui components
-- **Backend**: Express.js serving API endpoints with in-memory storage (seed data included)
+- **Backend Proxy**: Express.js proxies API requests to external backend at `BACKEND_URL` env var (https://capital-ops.replit.app). Falls back to local in-memory seed data when the backend route returns a non-200 response.
+- **Local Storage**: In-memory storage with realistic seed data used as fallback
 - **Design**: Dark mode by default, Inter font, blue primary theme (217 91% 35%)
-- **Future**: Backend is designed to be swapped to connect to external Coral8 backend
 
-## Data Model (9 Core Entities)
+## Backend Connection
+- `BACKEND_URL` environment variable points to `https://capital-ops.replit.app`
+- Every `/api/*` request first tries the external backend
+- If the backend returns a non-200 response, falls back to local in-memory data
+- Dashboard shows connection status indicator (Backend Connected / Local Mode)
+- `/api/backend-status` endpoint reports connection state
+
+## Data Model (10 Core Entities)
 - Portfolio, Asset, Project, Deal, Investor, Allocation, Milestone, Vendor, WorkOrder, RiskFlag
 
 ## File Structure
 - `shared/schema.ts` - Zod schemas and TypeScript types for all entities
-- `server/storage.ts` - In-memory storage with seed data
-- `server/routes.ts` - All REST API endpoints
+- `server/storage.ts` - In-memory storage with seed data (fallback)
+- `server/routes.ts` - API routes with proxy-to-backend logic + local fallback
 - `client/src/App.tsx` - Main app with sidebar layout and routing
 - `client/src/components/` - Shared components (app-sidebar, stat-card, page-header, theme-provider)
 - `client/src/pages/` - All page components (dashboard, assets, projects, deals, investors, allocations, milestones, risk-flags, vendors, work-orders)
 - `client/src/lib/formatters.ts` - Currency, date, number formatting utilities
 
 ## Pages
-- `/` - Dashboard (portfolio overview with KPIs)
+- `/` - Dashboard (portfolio overview with KPIs + backend connection status)
 - `/deals` - Deal pipeline and capital distribution
 - `/investors` - Investor profiles and alignment
 - `/allocations` - Commitment tracking
