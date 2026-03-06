@@ -1,16 +1,76 @@
-import { useQuery } from "@tanstack/react-query";
-import { Users, DollarSign, MapPin, Shield, Star } from "lucide-react";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Users, DollarSign, MapPin, Shield, Star, Plus, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { formatCurrency, getStatusColor } from "@/lib/formatters";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import type { Investor, Allocation } from "@shared/schema";
 
 export default function Investors() {
   const { data: investors, isLoading } = useQuery<Investor[]>({ queryKey: ["/api/investors"] });
   const { data: allocations } = useQuery<Allocation[]>({ queryKey: ["/api/allocations"] });
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+
+  const [form, setForm] = useState({
+    name: "", accreditationStatus: "Accredited", checkSizeMin: "", checkSizeMax: "",
+    assetPreference: "", geographyPreference: "", riskTolerance: "Moderate",
+    structurePreference: "", timelinePreference: "", strategicInterest: "",
+    tierLevel: "Tier 1", status: "Active",
+  });
+
+  const setField = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/investors", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/investors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({ title: "Investor created successfully" });
+      setForm({ name: "", accreditationStatus: "Accredited", checkSizeMin: "", checkSizeMax: "", assetPreference: "", geographyPreference: "", riskTolerance: "Moderate", structurePreference: "", timelinePreference: "", strategicInterest: "", tierLevel: "Tier 1", status: "Active" });
+      setOpen(false);
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to create investor", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/investors/${id}`); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/investors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({ title: "Investor deleted" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to delete", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createMutation.mutate({
+      ...form,
+      checkSizeMin: Number(form.checkSizeMin) || 0,
+      checkSizeMax: Number(form.checkSizeMax) || 0,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -31,7 +91,112 @@ export default function Investors() {
       <PageHeader
         title="Investor Profiles"
         description="Investor alignment and relationship management"
-      />
+      >
+        {user && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" data-testid="button-new-investor">
+                <Plus className="h-4 w-4 mr-1" /> New Investor
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add New Investor</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Name</Label>
+                  <Input value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="Investor name" data-testid="input-investor-name" required />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Accreditation</Label>
+                    <Select value={form.accreditationStatus} onValueChange={(v) => setField("accreditationStatus", v)}>
+                      <SelectTrigger data-testid="select-accreditation"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Accredited">Accredited</SelectItem>
+                        <SelectItem value="Qualified Purchaser">Qualified Purchaser</SelectItem>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tier Level</Label>
+                    <Select value={form.tierLevel} onValueChange={(v) => setField("tierLevel", v)}>
+                      <SelectTrigger data-testid="select-tier"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Tier 1">Tier 1</SelectItem>
+                        <SelectItem value="Tier 2">Tier 2</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Min Check Size</Label>
+                    <Input type="number" value={form.checkSizeMin} onChange={(e) => setField("checkSizeMin", e.target.value)} placeholder="0" data-testid="input-check-min" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Max Check Size</Label>
+                    <Input type="number" value={form.checkSizeMax} onChange={(e) => setField("checkSizeMax", e.target.value)} placeholder="0" data-testid="input-check-max" required />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Asset Preference</Label>
+                    <Input value={form.assetPreference} onChange={(e) => setField("assetPreference", e.target.value)} placeholder="e.g. Mixed-Use" data-testid="input-asset-pref" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Geography</Label>
+                    <Input value={form.geographyPreference} onChange={(e) => setField("geographyPreference", e.target.value)} placeholder="e.g. Sun Belt" data-testid="input-geo-pref" required />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Risk Tolerance</Label>
+                    <Select value={form.riskTolerance} onValueChange={(v) => setField("riskTolerance", v)}>
+                      <SelectTrigger data-testid="select-risk"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Conservative">Conservative</SelectItem>
+                        <SelectItem value="Moderate">Moderate</SelectItem>
+                        <SelectItem value="Aggressive">Aggressive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select value={form.status} onValueChange={(v) => setField("status", v)}>
+                      <SelectTrigger data-testid="select-investor-status"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
+                        <SelectItem value="Prospect">Prospect</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Structure Preference</Label>
+                    <Input value={form.structurePreference} onChange={(e) => setField("structurePreference", e.target.value)} placeholder="e.g. LP Equity" data-testid="input-structure" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Timeline</Label>
+                    <Input value={form.timelinePreference} onChange={(e) => setField("timelinePreference", e.target.value)} placeholder="e.g. 24-48 months" data-testid="input-timeline" required />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Strategic Interest</Label>
+                  <Input value={form.strategicInterest} onChange={(e) => setField("strategicInterest", e.target.value)} placeholder="e.g. Value-Add" data-testid="input-strategic" required />
+                </div>
+                <Button type="submit" className="w-full" disabled={createMutation.isPending} data-testid="button-submit-investor">
+                  {createMutation.isPending ? "Creating..." : "Add Investor"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+      </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard title="Total Investors" value={investors?.length || 0} icon={Users} testId="stat-total-investors" />
@@ -64,6 +229,25 @@ export default function Investors() {
                       </div>
                     </div>
                   </div>
+                  {user && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" data-testid={`button-delete-investor-${investor.id}`} aria-label="Delete investor">
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete {investor.name}?</AlertDialogTitle>
+                          <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteMutation.mutate(investor.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">

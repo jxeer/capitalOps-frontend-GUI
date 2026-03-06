@@ -9,34 +9,53 @@ import type {
   Vendor, InsertVendor,
   WorkOrder, InsertWorkOrder,
   RiskFlag, Portfolio,
+  User, InsertUser,
 } from "@shared/schema";
 
 export interface IStorage {
+  getUser(id: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
   getPortfolios(): Promise<Portfolio[]>;
   getAssets(): Promise<Asset[]>;
   getAsset(id: string): Promise<Asset | undefined>;
   createAsset(asset: InsertAsset): Promise<Asset>;
+  updateAsset(id: string, asset: Partial<InsertAsset>): Promise<Asset | undefined>;
+  deleteAsset(id: string): Promise<boolean>;
   getProjects(): Promise<Project[]>;
   getProject(id: string): Promise<Project | undefined>;
   createProject(project: InsertProject): Promise<Project>;
+  updateProject(id: string, project: Partial<InsertProject>): Promise<Project | undefined>;
+  deleteProject(id: string): Promise<boolean>;
   getDeals(): Promise<Deal[]>;
   getDeal(id: string): Promise<Deal | undefined>;
   createDeal(deal: InsertDeal): Promise<Deal>;
+  updateDeal(id: string, deal: Partial<InsertDeal>): Promise<Deal | undefined>;
+  deleteDeal(id: string): Promise<boolean>;
   getInvestors(): Promise<Investor[]>;
   getInvestor(id: string): Promise<Investor | undefined>;
   createInvestor(investor: InsertInvestor): Promise<Investor>;
+  updateInvestor(id: string, investor: Partial<InsertInvestor>): Promise<Investor | undefined>;
+  deleteInvestor(id: string): Promise<boolean>;
   getAllocations(): Promise<Allocation[]>;
   getAllocation(id: string): Promise<Allocation | undefined>;
   createAllocation(allocation: InsertAllocation): Promise<Allocation>;
+  updateAllocation(id: string, allocation: Partial<InsertAllocation>): Promise<Allocation | undefined>;
+  deleteAllocation(id: string): Promise<boolean>;
   getMilestones(): Promise<Milestone[]>;
   getMilestonesByProject(projectId: string): Promise<Milestone[]>;
   createMilestone(milestone: InsertMilestone): Promise<Milestone>;
+  deleteMilestone(id: string): Promise<boolean>;
   getVendors(): Promise<Vendor[]>;
   getVendor(id: string): Promise<Vendor | undefined>;
   createVendor(vendor: InsertVendor): Promise<Vendor>;
+  updateVendor(id: string, vendor: Partial<InsertVendor>): Promise<Vendor | undefined>;
+  deleteVendor(id: string): Promise<boolean>;
   getWorkOrders(): Promise<WorkOrder[]>;
   getWorkOrdersByVendor(vendorId: string): Promise<WorkOrder[]>;
   createWorkOrder(workOrder: InsertWorkOrder): Promise<WorkOrder>;
+  updateWorkOrder(id: string, workOrder: Partial<InsertWorkOrder>): Promise<WorkOrder | undefined>;
+  deleteWorkOrder(id: string): Promise<boolean>;
   getRiskFlags(): Promise<RiskFlag[]>;
   getRiskFlagsByProject(projectId: string): Promise<RiskFlag[]>;
   getDashboardStats(): Promise<{
@@ -52,6 +71,7 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  private users: Map<string, User> = new Map();
   private portfolios: Map<string, Portfolio> = new Map();
   private assets: Map<string, Asset> = new Map();
   private projects: Map<string, Project> = new Map();
@@ -65,6 +85,21 @@ export class MemStorage implements IStorage {
 
   constructor() {
     this.seed();
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(u => u.username === username);
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const id = randomUUID();
+    const newUser: User = { ...user, id, role: user.role || "viewer" };
+    this.users.set(id, newUser);
+    return newUser;
   }
 
   private seed() {
@@ -175,6 +210,18 @@ export class MemStorage implements IStorage {
     return newAsset;
   }
 
+  async updateAsset(id: string, data: Partial<InsertAsset>): Promise<Asset | undefined> {
+    const existing = this.assets.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...data };
+    this.assets.set(id, updated);
+    return updated;
+  }
+
+  async deleteAsset(id: string): Promise<boolean> {
+    return this.assets.delete(id);
+  }
+
   async getProjects(): Promise<Project[]> {
     return Array.from(this.projects.values());
   }
@@ -188,6 +235,18 @@ export class MemStorage implements IStorage {
     const newProject: Project = { ...project, id };
     this.projects.set(id, newProject);
     return newProject;
+  }
+
+  async updateProject(id: string, data: Partial<InsertProject>): Promise<Project | undefined> {
+    const existing = this.projects.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...data };
+    this.projects.set(id, updated);
+    return updated;
+  }
+
+  async deleteProject(id: string): Promise<boolean> {
+    return this.projects.delete(id);
   }
 
   async getDeals(): Promise<Deal[]> {
@@ -205,6 +264,18 @@ export class MemStorage implements IStorage {
     return newDeal;
   }
 
+  async updateDeal(id: string, data: Partial<InsertDeal>): Promise<Deal | undefined> {
+    const existing = this.deals.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...data };
+    this.deals.set(id, updated);
+    return updated;
+  }
+
+  async deleteDeal(id: string): Promise<boolean> {
+    return this.deals.delete(id);
+  }
+
   async getInvestors(): Promise<Investor[]> {
     return Array.from(this.investors.values());
   }
@@ -218,6 +289,18 @@ export class MemStorage implements IStorage {
     const newInvestor: Investor = { ...investor, id };
     this.investors.set(id, newInvestor);
     return newInvestor;
+  }
+
+  async updateInvestor(id: string, data: Partial<InsertInvestor>): Promise<Investor | undefined> {
+    const existing = this.investors.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...data };
+    this.investors.set(id, updated);
+    return updated;
+  }
+
+  async deleteInvestor(id: string): Promise<boolean> {
+    return this.investors.delete(id);
   }
 
   async getAllocations(): Promise<Allocation[]> {
@@ -235,6 +318,18 @@ export class MemStorage implements IStorage {
     return newAllocation;
   }
 
+  async updateAllocation(id: string, data: Partial<InsertAllocation>): Promise<Allocation | undefined> {
+    const existing = this.allocations.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...data };
+    this.allocations.set(id, updated);
+    return updated;
+  }
+
+  async deleteAllocation(id: string): Promise<boolean> {
+    return this.allocations.delete(id);
+  }
+
   async getMilestones(): Promise<Milestone[]> {
     return Array.from(this.milestones.values());
   }
@@ -248,6 +343,10 @@ export class MemStorage implements IStorage {
     const newMilestone: Milestone = { ...milestone, id };
     this.milestones.set(id, newMilestone);
     return newMilestone;
+  }
+
+  async deleteMilestone(id: string): Promise<boolean> {
+    return this.milestones.delete(id);
   }
 
   async getVendors(): Promise<Vendor[]> {
@@ -265,6 +364,18 @@ export class MemStorage implements IStorage {
     return newVendor;
   }
 
+  async updateVendor(id: string, data: Partial<InsertVendor>): Promise<Vendor | undefined> {
+    const existing = this.vendors.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...data };
+    this.vendors.set(id, updated);
+    return updated;
+  }
+
+  async deleteVendor(id: string): Promise<boolean> {
+    return this.vendors.delete(id);
+  }
+
   async getWorkOrders(): Promise<WorkOrder[]> {
     return Array.from(this.workOrders.values());
   }
@@ -278,6 +389,18 @@ export class MemStorage implements IStorage {
     const newWorkOrder: WorkOrder = { ...workOrder, id };
     this.workOrders.set(id, newWorkOrder);
     return newWorkOrder;
+  }
+
+  async updateWorkOrder(id: string, data: Partial<InsertWorkOrder>): Promise<WorkOrder | undefined> {
+    const existing = this.workOrders.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...data };
+    this.workOrders.set(id, updated);
+    return updated;
+  }
+
+  async deleteWorkOrder(id: string): Promise<boolean> {
+    return this.workOrders.delete(id);
   }
 
   async getRiskFlags(): Promise<RiskFlag[]> {

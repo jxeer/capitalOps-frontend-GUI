@@ -142,5 +142,12 @@ export const riskFlagSchema = z.object({
 });
 export type RiskFlag = z.infer<typeof riskFlagSchema>;
 
-export type User = { id: string; username: string; password: string };
-export type InsertUser = { username: string; password: string };
+export const userSchema = z.object({
+  id: z.string(),
+  username: z.string().min(3),
+  password: z.string().min(6),
+  role: z.enum(["admin", "manager", "viewer"]).default("viewer"),
+});
+export type User = z.infer<typeof userSchema>;
+export const insertUserSchema = userSchema.omit({ id: true });
+export type InsertUser = z.infer<typeof insertUserSchema>;

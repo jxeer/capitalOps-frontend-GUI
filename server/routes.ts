@@ -2,6 +2,8 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { log } from "./index";
+import { setupAuth, requireAuth, hashPassword, comparePasswords } from "./auth";
+import passport from "passport";
 
 const BACKEND_URL = process.env.BACKEND_URL || "";
 
@@ -50,10 +52,92 @@ async function withBackendFallback(
   await localHandler();
 }
 
+function isSeedId(id: string): boolean {
+  return /^(asset|proj|deal|inv|alloc|ms|vend|wo|rf|port)-\d+$/.test(id);
+}
+
+async function withMergedList<T extends { id: string }>(
+  req: Request,
+  res: Response,
+  getLocal: () => Promise<T[]>
+) {
+  const backendPath = req.originalUrl;
+  const result = await proxyToBackend(backendPath, "GET");
+
+  if (result.ok && Array.isArray(result.data)) {
+    log(`Proxied GET ${backendPath} -> backend (${result.status})`, "proxy");
+    const localItems = await getLocal();
+    const userCreated = localItems.filter(item => !isSeedId(item.id));
+    const backendIds = new Set((result.data as T[]).map(item => item.id));
+    const merged = [...(result.data as T[]), ...userCreated.filter(item => !backendIds.has(item.id))];
+    return res.json(merged);
+  }
+
+  log(`Backend unavailable for ${backendPath}, using local storage`, "proxy");
+  const localItems = await getLocal();
+  res.json(localItems);
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  setupAuth(app);
+
+  app.post("/api/register", async (req, res, next) => {
+    try {
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+      if (username.length < 3) {
+        return res.status(400).json({ message: "Username must be at least 3 characters" });
+      }
+      if (password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      const existing = await storage.getUserByUsername(username);
+      if (existing) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+
+      const hashed = await hashPassword(password);
+      const user = await storage.createUser({ username, password: hashed, role: "viewer" });
+
+      req.login({ id: user.id, username: user.username, role: user.role }, (err) => {
+        if (err) return next(err);
+        res.status(201).json({ id: user.id, username: user.username, role: user.role });
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) return next(err);
+      if (!user) return res.status(401).json({ message: info?.message || "Invalid credentials" });
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.json({ id: user.id, username: user.username, role: user.role });
+      });
+    })(req, res, next);
+  });
+
+  app.post("/api/logout", (req, res, next) => {
+    req.logout((err) => {
+      if (err) return next(err);
+      res.json({ message: "Logged out" });
+    });
+  });
+
+  app.get("/api/user", (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+    const user = req.user!;
+    res.json({ id: user.id, username: user.username, role: user.role });
+  });
+
   app.get("/api/backend-status", async (_req, res) => {
     if (!BACKEND_URL) {
       return res.json({ connected: false, url: null, mode: "local" });
@@ -82,10 +166,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/assets", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const assets = await storage.getAssets();
-      res.json(assets);
-    });
+    await withMergedList(req, res, () => storage.getAssets());
   });
 
   app.get("/api/assets/:id", async (req, res) => {
@@ -96,18 +177,25 @@ export async function registerRoutes(
     });
   });
 
-  app.post("/api/assets", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const asset = await storage.createAsset(req.body);
-      res.status(201).json(asset);
-    });
+  app.post("/api/assets", requireAuth, async (_req, res) => {
+    const asset = await storage.createAsset(_req.body);
+    res.status(201).json(asset);
+  });
+
+  app.put("/api/assets/:id", requireAuth, async (req, res) => {
+    const asset = await storage.updateAsset(req.params.id, req.body);
+    if (!asset) return res.status(404).json({ message: "Asset not found" });
+    res.json(asset);
+  });
+
+  app.delete("/api/assets/:id", requireAuth, async (req, res) => {
+    const deleted = await storage.deleteAsset(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Asset not found" });
+    res.json({ message: "Deleted" });
   });
 
   app.get("/api/projects", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const projects = await storage.getProjects();
-      res.json(projects);
-    });
+    await withMergedList(req, res, () => storage.getProjects());
   });
 
   app.get("/api/projects/:id", async (req, res) => {
@@ -118,18 +206,25 @@ export async function registerRoutes(
     });
   });
 
-  app.post("/api/projects", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const project = await storage.createProject(req.body);
-      res.status(201).json(project);
-    });
+  app.post("/api/projects", requireAuth, async (_req, res) => {
+    const project = await storage.createProject(_req.body);
+    res.status(201).json(project);
+  });
+
+  app.put("/api/projects/:id", requireAuth, async (req, res) => {
+    const project = await storage.updateProject(req.params.id, req.body);
+    if (!project) return res.status(404).json({ message: "Project not found" });
+    res.json(project);
+  });
+
+  app.delete("/api/projects/:id", requireAuth, async (req, res) => {
+    const deleted = await storage.deleteProject(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Project not found" });
+    res.json({ message: "Deleted" });
   });
 
   app.get("/api/deals", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const deals = await storage.getDeals();
-      res.json(deals);
-    });
+    await withMergedList(req, res, () => storage.getDeals());
   });
 
   app.get("/api/deals/:id", async (req, res) => {
@@ -140,18 +235,25 @@ export async function registerRoutes(
     });
   });
 
-  app.post("/api/deals", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const deal = await storage.createDeal(req.body);
-      res.status(201).json(deal);
-    });
+  app.post("/api/deals", requireAuth, async (_req, res) => {
+    const deal = await storage.createDeal(_req.body);
+    res.status(201).json(deal);
+  });
+
+  app.put("/api/deals/:id", requireAuth, async (req, res) => {
+    const deal = await storage.updateDeal(req.params.id, req.body);
+    if (!deal) return res.status(404).json({ message: "Deal not found" });
+    res.json(deal);
+  });
+
+  app.delete("/api/deals/:id", requireAuth, async (req, res) => {
+    const deleted = await storage.deleteDeal(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Deal not found" });
+    res.json({ message: "Deleted" });
   });
 
   app.get("/api/investors", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const investors = await storage.getInvestors();
-      res.json(investors);
-    });
+    await withMergedList(req, res, () => storage.getInvestors());
   });
 
   app.get("/api/investors/:id", async (req, res) => {
@@ -162,32 +264,46 @@ export async function registerRoutes(
     });
   });
 
-  app.post("/api/investors", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const investor = await storage.createInvestor(req.body);
-      res.status(201).json(investor);
-    });
+  app.post("/api/investors", requireAuth, async (_req, res) => {
+    const investor = await storage.createInvestor(_req.body);
+    res.status(201).json(investor);
+  });
+
+  app.put("/api/investors/:id", requireAuth, async (req, res) => {
+    const investor = await storage.updateInvestor(req.params.id, req.body);
+    if (!investor) return res.status(404).json({ message: "Investor not found" });
+    res.json(investor);
+  });
+
+  app.delete("/api/investors/:id", requireAuth, async (req, res) => {
+    const deleted = await storage.deleteInvestor(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Investor not found" });
+    res.json({ message: "Deleted" });
   });
 
   app.get("/api/allocations", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const allocations = await storage.getAllocations();
-      res.json(allocations);
-    });
+    await withMergedList(req, res, () => storage.getAllocations());
   });
 
-  app.post("/api/allocations", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const allocation = await storage.createAllocation(req.body);
-      res.status(201).json(allocation);
-    });
+  app.post("/api/allocations", requireAuth, async (_req, res) => {
+    const allocation = await storage.createAllocation(_req.body);
+    res.status(201).json(allocation);
+  });
+
+  app.put("/api/allocations/:id", requireAuth, async (req, res) => {
+    const allocation = await storage.updateAllocation(req.params.id, req.body);
+    if (!allocation) return res.status(404).json({ message: "Allocation not found" });
+    res.json(allocation);
+  });
+
+  app.delete("/api/allocations/:id", requireAuth, async (req, res) => {
+    const deleted = await storage.deleteAllocation(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Allocation not found" });
+    res.json({ message: "Deleted" });
   });
 
   app.get("/api/milestones", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const milestones = await storage.getMilestones();
-      res.json(milestones);
-    });
+    await withMergedList(req, res, () => storage.getMilestones());
   });
 
   app.get("/api/milestones/project/:projectId", async (req, res) => {
@@ -197,18 +313,19 @@ export async function registerRoutes(
     });
   });
 
-  app.post("/api/milestones", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const milestone = await storage.createMilestone(req.body);
-      res.status(201).json(milestone);
-    });
+  app.post("/api/milestones", requireAuth, async (_req, res) => {
+    const milestone = await storage.createMilestone(_req.body);
+    res.status(201).json(milestone);
+  });
+
+  app.delete("/api/milestones/:id", requireAuth, async (req, res) => {
+    const deleted = await storage.deleteMilestone(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Milestone not found" });
+    res.json({ message: "Deleted" });
   });
 
   app.get("/api/vendors", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const vendors = await storage.getVendors();
-      res.json(vendors);
-    });
+    await withMergedList(req, res, () => storage.getVendors());
   });
 
   app.get("/api/vendors/:id", async (req, res) => {
@@ -219,18 +336,25 @@ export async function registerRoutes(
     });
   });
 
-  app.post("/api/vendors", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const vendor = await storage.createVendor(req.body);
-      res.status(201).json(vendor);
-    });
+  app.post("/api/vendors", requireAuth, async (_req, res) => {
+    const vendor = await storage.createVendor(_req.body);
+    res.status(201).json(vendor);
+  });
+
+  app.put("/api/vendors/:id", requireAuth, async (req, res) => {
+    const vendor = await storage.updateVendor(req.params.id, req.body);
+    if (!vendor) return res.status(404).json({ message: "Vendor not found" });
+    res.json(vendor);
+  });
+
+  app.delete("/api/vendors/:id", requireAuth, async (req, res) => {
+    const deleted = await storage.deleteVendor(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Vendor not found" });
+    res.json({ message: "Deleted" });
   });
 
   app.get("/api/work-orders", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const workOrders = await storage.getWorkOrders();
-      res.json(workOrders);
-    });
+    await withMergedList(req, res, () => storage.getWorkOrders());
   });
 
   app.get("/api/work-orders/vendor/:vendorId", async (req, res) => {
@@ -240,18 +364,25 @@ export async function registerRoutes(
     });
   });
 
-  app.post("/api/work-orders", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const workOrder = await storage.createWorkOrder(req.body);
-      res.status(201).json(workOrder);
-    });
+  app.post("/api/work-orders", requireAuth, async (_req, res) => {
+    const workOrder = await storage.createWorkOrder(_req.body);
+    res.status(201).json(workOrder);
+  });
+
+  app.put("/api/work-orders/:id", requireAuth, async (req, res) => {
+    const workOrder = await storage.updateWorkOrder(req.params.id, req.body);
+    if (!workOrder) return res.status(404).json({ message: "Work order not found" });
+    res.json(workOrder);
+  });
+
+  app.delete("/api/work-orders/:id", requireAuth, async (req, res) => {
+    const deleted = await storage.deleteWorkOrder(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Work order not found" });
+    res.json({ message: "Deleted" });
   });
 
   app.get("/api/risk-flags", async (req, res) => {
-    await withBackendFallback(req, res, async () => {
-      const riskFlags = await storage.getRiskFlags();
-      res.json(riskFlags);
-    });
+    await withMergedList(req, res, () => storage.getRiskFlags());
   });
 
   app.get("/api/risk-flags/project/:projectId", async (req, res) => {

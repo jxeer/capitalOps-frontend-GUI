@@ -1,11 +1,22 @@
-import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, DollarSign, Users } from "lucide-react";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { TrendingUp, DollarSign, Users, Plus, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { formatCurrency, formatDate, getStatusColor } from "@/lib/formatters";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import type { Allocation, Investor, Deal, Project, Asset } from "@shared/schema";
 
 export default function Allocations() {
@@ -14,6 +25,51 @@ export default function Allocations() {
   const { data: deals } = useQuery<Deal[]>({ queryKey: ["/api/deals"] });
   const { data: projects } = useQuery<Project[]>({ queryKey: ["/api/projects"] });
   const { data: assets } = useQuery<Asset[]>({ queryKey: ["/api/assets"] });
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+
+  const [form, setForm] = useState({
+    investorId: "", dealId: "", softCommitAmount: "", hardCommitAmount: "0", status: "Pending", notes: "",
+  });
+  const setField = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/allocations", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/allocations"] });
+      toast({ title: "Allocation created" });
+      setForm({ investorId: "", dealId: "", softCommitAmount: "", hardCommitAmount: "0", status: "Pending", notes: "" });
+      setOpen(false);
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to create allocation", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/allocations/${id}`); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/allocations"] });
+      toast({ title: "Allocation deleted" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to delete", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createMutation.mutate({
+      ...form,
+      softCommitAmount: Number(form.softCommitAmount) || 0,
+      hardCommitAmount: Number(form.hardCommitAmount) || 0,
+      timestamp: new Date().toISOString(),
+    });
+  };
 
   if (isLoading) {
     return (
@@ -32,9 +88,10 @@ export default function Allocations() {
 
   const getDealName = (dealId: string) => {
     const deal = deals?.find(d => d.id === dealId);
-    const project = deal ? projects?.find(p => p.id === deal.projectId) : undefined;
+    if (!deal) return "Unknown Deal";
+    const project = projects?.find(p => p.id === deal.projectId);
     const asset = project ? assets?.find(a => a.id === project.assetId) : undefined;
-    return asset?.name || "Unknown Deal";
+    return (deal as any).projectName || asset?.name || deal.phase || "Unknown Deal";
   };
 
   return (
@@ -42,7 +99,76 @@ export default function Allocations() {
       <PageHeader
         title="Allocations"
         description="Investor commitment tracking and capital flow"
-      />
+      >
+        {user && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" data-testid="button-new-allocation">
+                <Plus className="h-4 w-4 mr-1" /> New Allocation
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Allocation</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Investor</Label>
+                  <Select value={form.investorId} onValueChange={(v) => setField("investorId", v)}>
+                    <SelectTrigger data-testid="select-alloc-investor"><SelectValue placeholder="Select investor" /></SelectTrigger>
+                    <SelectContent>
+                      {investors?.map(i => (
+                        <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Deal</Label>
+                  <Select value={form.dealId} onValueChange={(v) => setField("dealId", v)}>
+                    <SelectTrigger data-testid="select-alloc-deal"><SelectValue placeholder="Select deal" /></SelectTrigger>
+                    <SelectContent>
+                      {deals?.map(d => (
+                        <SelectItem key={d.id} value={d.id}>{getDealName(d.id)} - {d.phase}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Soft Commit</Label>
+                    <Input type="number" value={form.softCommitAmount} onChange={(e) => setField("softCommitAmount", e.target.value)} placeholder="0" data-testid="input-soft-commit" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Hard Commit</Label>
+                    <Input type="number" value={form.hardCommitAmount} onChange={(e) => setField("hardCommitAmount", e.target.value)} placeholder="0" data-testid="input-hard-commit" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={form.status} onValueChange={(v) => setField("status", v)}>
+                    <SelectTrigger data-testid="select-alloc-status"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Soft Commit">Soft Commit</SelectItem>
+                      <SelectItem value="Hard Commit">Hard Commit</SelectItem>
+                      <SelectItem value="Funded">Funded</SelectItem>
+                      <SelectItem value="Withdrawn">Withdrawn</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Notes</Label>
+                  <Textarea value={form.notes} onChange={(e) => setField("notes", e.target.value)} placeholder="Optional notes..." data-testid="input-alloc-notes" />
+                </div>
+                <Button type="submit" className="w-full" disabled={createMutation.isPending} data-testid="button-submit-allocation">
+                  {createMutation.isPending ? "Creating..." : "Create Allocation"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+      </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard title="Total Soft Commits" value={formatCurrency(totalSoft)} icon={TrendingUp} testId="stat-soft-commits" />
@@ -89,9 +215,30 @@ export default function Allocations() {
                     </div>
                   </div>
 
-                  <Badge variant="secondary" className={getStatusColor(alloc.status)}>
-                    {alloc.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className={getStatusColor(alloc.status)}>
+                      {alloc.status}
+                    </Badge>
+                    {user && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" data-testid={`button-delete-alloc-${alloc.id}`} aria-label="Delete allocation">
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete this allocation?</AlertDialogTitle>
+                            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteMutation.mutate(alloc.id)}>Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
                 </div>
               );
             })}

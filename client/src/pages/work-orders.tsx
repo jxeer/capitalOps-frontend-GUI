@@ -1,17 +1,74 @@
-import { useQuery } from "@tanstack/react-query";
-import { ClipboardList, DollarSign, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { ClipboardList, DollarSign, AlertCircle, CheckCircle2, Plus, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { formatCurrency, formatDate, getStatusColor } from "@/lib/formatters";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import type { WorkOrder, Vendor, Asset } from "@shared/schema";
 
 export default function WorkOrders() {
   const { data: workOrders, isLoading } = useQuery<WorkOrder[]>({ queryKey: ["/api/work-orders"] });
   const { data: vendors } = useQuery<Vendor[]>({ queryKey: ["/api/vendors"] });
   const { data: assets } = useQuery<Asset[]>({ queryKey: ["/api/assets"] });
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+
+  const [form, setForm] = useState({
+    vendorId: "", assetId: "", type: "", priority: "Medium", cost: "", capExFlag: false, status: "Open", description: "",
+  });
+  const setField = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/work-orders", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({ title: "Work order created" });
+      setForm({ vendorId: "", assetId: "", type: "", priority: "Medium", cost: "", capExFlag: false, status: "Open", description: "" });
+      setOpen(false);
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to create work order", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/work-orders/${id}`); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({ title: "Work order deleted" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Failed to delete", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createMutation.mutate({
+      ...form,
+      cost: Number(form.cost) || 0,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -34,7 +91,81 @@ export default function WorkOrders() {
       <PageHeader
         title="Work Orders"
         description="Work order management and cost tracking"
-      />
+      >
+        {user && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" data-testid="button-new-wo">
+                <Plus className="h-4 w-4 mr-1" /> New Work Order
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Work Order</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Type</Label>
+                  <Input value={form.type} onChange={(e) => setField("type", e.target.value)} placeholder="e.g. HVAC Installation" data-testid="input-wo-type" required />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Vendor</Label>
+                    <Select value={form.vendorId} onValueChange={(v) => setField("vendorId", v)}>
+                      <SelectTrigger data-testid="select-wo-vendor"><SelectValue placeholder="Select vendor" /></SelectTrigger>
+                      <SelectContent>
+                        {vendors?.map(v => (
+                          <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Asset</Label>
+                    <Select value={form.assetId} onValueChange={(v) => setField("assetId", v)}>
+                      <SelectTrigger data-testid="select-wo-asset"><SelectValue placeholder="Select asset" /></SelectTrigger>
+                      <SelectContent>
+                        {assets?.map(a => (
+                          <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Priority</Label>
+                    <Select value={form.priority} onValueChange={(v) => setField("priority", v)}>
+                      <SelectTrigger data-testid="select-wo-priority"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Low">Low</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="High">High</SelectItem>
+                        <SelectItem value="Urgent">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Cost</Label>
+                    <Input type="number" value={form.cost} onChange={(e) => setField("cost", e.target.value)} placeholder="0" data-testid="input-wo-cost" required />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Switch checked={form.capExFlag} onCheckedChange={(v) => setField("capExFlag", v)} data-testid="switch-capex" />
+                  <Label>CapEx Item</Label>
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea value={form.description} onChange={(e) => setField("description", e.target.value)} placeholder="Work order details..." data-testid="input-wo-desc" />
+                </div>
+                <Button type="submit" className="w-full" disabled={createMutation.isPending} data-testid="button-submit-wo">
+                  {createMutation.isPending ? "Creating..." : "Create Work Order"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+      </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Open Orders" value={openOrders.length} icon={ClipboardList} testId="stat-open-orders" />
@@ -76,6 +207,25 @@ export default function WorkOrders() {
                       <Badge variant="secondary" className={getStatusColor(wo.status)}>
                         {wo.status}
                       </Badge>
+                      {user && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" data-testid={`button-delete-wo-${wo.id}`} aria-label="Delete work order">
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete this work order?</AlertDialogTitle>
+                              <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(wo.id)}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                   </div>
 
