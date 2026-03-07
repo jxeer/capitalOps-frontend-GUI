@@ -15,6 +15,7 @@ import type {
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByGoogleId(googleId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getPortfolios(): Promise<Portfolio[]>;
   getAssets(): Promise<Asset[]>;
@@ -93,6 +94,10 @@ export class MemStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(u => u.username === username);
+  }
+
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(u => u.googleId === googleId);
   }
 
   async createUser(user: InsertUser): Promise<User> {

@@ -1,17 +1,30 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Building2, Loader2 } from "lucide-react";
+import { SiGoogle } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AuthPage() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [mode, setMode] = useState<"login" | "register">("login");
+  const { toast } = useToast();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const googleError = urlParams.get("error");
+
+  if (googleError && googleError === "google_failed") {
+    Promise.resolve().then(() => {
+      toast({ title: "Google sign-in failed", description: "Please try again or use username/password.", variant: "destructive" });
+      window.history.replaceState({}, "", "/auth");
+    });
+  }
 
   if (user) {
     Promise.resolve().then(() => setLocation("/"));
@@ -38,6 +51,15 @@ export default function AuthPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <GoogleSignInButton />
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              </div>
+            </div>
             {mode === "login" ? <LoginForm /> : <RegisterForm />}
             <div className="mt-6 text-center text-sm">
               {mode === "login" ? (
@@ -94,6 +116,28 @@ function Feature({ title, desc }: { title: string; desc: string }) {
         <p className="text-xs text-muted-foreground">{desc}</p>
       </div>
     </div>
+  );
+}
+
+function GoogleSignInButton() {
+  const { data: googleStatus } = useQuery<{ enabled: boolean }>({
+    queryKey: ["/api/auth/google/status"],
+  });
+
+  if (!googleStatus?.enabled) return null;
+
+  return (
+    <Button
+      variant="outline"
+      className="w-full gap-2"
+      data-testid="button-google-signin"
+      onClick={() => {
+        window.location.href = "/api/auth/google";
+      }}
+    >
+      <SiGoogle className="h-4 w-4" />
+      Sign in with Google
+    </Button>
   );
 }
 

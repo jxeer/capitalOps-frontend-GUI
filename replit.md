@@ -43,5 +43,15 @@ CapitalOps is a capital + governance operating layer for real estate development
 - `/vendors` - Vendor management
 - `/work-orders` - Work order tracking
 
+## Authentication
+- **Local auth**: Username/password with passport-local, scrypt password hashing
+- **Google OAuth**: passport-google-oauth20 strategy, requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` env vars
+- Session management: express-session with MemoryStore, 24h cookie
+- Users stored in-memory (resets on server restart)
+- User schema: id, username, password (optional for Google users), role (admin/manager/viewer), googleId, email, profileImage
+- Auth files: `server/auth.ts` (passport setup), auth routes in `server/routes.ts`
+- Frontend: `client/src/hooks/use-auth.tsx` (AuthProvider context), `client/src/pages/auth-page.tsx` (login/register + Google sign-in)
+- Google OAuth routes: `/api/auth/google` (initiate), `/api/auth/google/callback` (return), `/api/auth/google/status` (check enabled)
+
 ## Running
 `npm run dev` starts Express backend + Vite frontend on port 5000

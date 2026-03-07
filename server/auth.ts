@@ -1,5 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -57,6 +58,7 @@ export function setupAuth(app: Express) {
       try {
         const user = await storage.getUserByUsername(username);
         if (!user) return done(null, false, { message: "Invalid credentials" });
+        if (!user.password) return done(null, false, { message: "This account uses Google sign-in" });
 
         const valid = await comparePasswords(password, user.password);
         if (!valid) return done(null, false, { message: "Invalid credentials" });
@@ -67,6 +69,54 @@ export function setupAuth(app: Express) {
       }
     })
   );
+
+  const googleClientId = process.env.GOOGLE_CLIENT_ID;
+  const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+  if (googleClientId && googleClientSecret) {
+    const replitDomains = process.env.REPLIT_DOMAINS || process.env.REPLIT_DEV_DOMAIN || "";
+    const primaryDomain = replitDomains.split(",")[0]?.trim();
+    const callbackURL = primaryDomain
+      ? `https://${primaryDomain}/api/auth/google/callback`
+      : "/api/auth/google/callback";
+
+    passport.use(
+      new GoogleStrategy(
+        {
+          clientID: googleClientId,
+          clientSecret: googleClientSecret,
+          callbackURL,
+        },
+        async (_accessToken, _refreshToken, profile, done) => {
+          try {
+            let user = await storage.getUserByGoogleId(profile.id);
+
+            if (!user) {
+              const email = profile.emails?.[0]?.value;
+              const displayName = profile.displayName || email?.split("@")[0] || `user-${profile.id.slice(0, 6)}`;
+
+              const existingByUsername = await storage.getUserByUsername(displayName);
+              const username = existingByUsername
+                ? `${displayName}-${profile.id.slice(0, 6)}`
+                : displayName;
+
+              user = await storage.createUser({
+                username,
+                googleId: profile.id,
+                email,
+                profileImage: profile.photos?.[0]?.value,
+                role: "viewer",
+              });
+            }
+
+            return done(null, { id: user.id, username: user.username, role: user.role });
+          } catch (err) {
+            return done(err as Error);
+          }
+        }
+      )
+    );
+  }
 
   passport.serializeUser((user, done) => {
     done(null, user.id);

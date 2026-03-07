@@ -138,6 +138,28 @@ export async function registerRoutes(
     res.json({ id: user.id, username: user.username, role: user.role });
   });
 
+  const googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+
+  app.get("/api/auth/google", (req, res, next) => {
+    if (!googleEnabled) {
+      return res.status(503).json({ message: "Google sign-in is not configured" });
+    }
+    passport.authenticate("google", { scope: ["profile", "email"] })(req, res, next);
+  });
+
+  app.get("/api/auth/google/callback", (req, res, next) => {
+    if (!googleEnabled) {
+      return res.redirect("/auth?error=google_failed");
+    }
+    passport.authenticate("google", { failureRedirect: "/auth?error=google_failed" })(req, res, () => {
+      res.redirect("/");
+    });
+  });
+
+  app.get("/api/auth/google/status", (_req, res) => {
+    res.json({ enabled: googleEnabled });
+  });
+
   app.get("/api/backend-status", async (_req, res) => {
     if (!BACKEND_URL) {
       return res.json({ connected: false, url: null, mode: "local" });
