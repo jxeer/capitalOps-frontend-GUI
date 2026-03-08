@@ -134,7 +134,7 @@ export default function Projects() {
     );
   }
 
-  const activeProjects = projects?.filter(p => p.status === "In Progress").length || 0;
+  const activeProjects = projects?.filter(p => ["In Progress", "On Track", "At Risk"].includes(p.status)).length || 0;
   const totalBudget = projects?.reduce((sum, p) => sum + p.budgetTotal, 0) || 0;
 
   return (
@@ -323,7 +323,10 @@ export default function Projects() {
                   <SelectContent>
                     <SelectItem value="Planning">Planning</SelectItem>
                     <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="On Track">On Track</SelectItem>
+                    <SelectItem value="At Risk">At Risk</SelectItem>
                     <SelectItem value="On Hold">On Hold</SelectItem>
+                    <SelectItem value="Complete">Complete</SelectItem>
                     <SelectItem value="Completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>

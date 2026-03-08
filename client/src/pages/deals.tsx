@@ -418,6 +418,7 @@ export default function Deals() {
                   <SelectTrigger data-testid="select-deal-status"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Draft">Draft</SelectItem>
+                    <SelectItem value="Open">Open</SelectItem>
                     <SelectItem value="Active">Active</SelectItem>
                     <SelectItem value="Funded">Funded</SelectItem>
                     <SelectItem value="Closed">Closed</SelectItem>

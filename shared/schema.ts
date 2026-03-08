@@ -30,7 +30,7 @@ export const projectSchema = z.object({
   targetCompletion: z.string(),
   budgetTotal: z.number(),
   budgetActual: z.number(),
-  status: z.enum(["Planning", "In Progress", "On Hold", "Completed"]),
+  status: z.enum(["Planning", "In Progress", "On Track", "At Risk", "On Hold", "Complete", "Completed"]),
   pmAssigned: z.string(),
 });
 export type Project = z.infer<typeof projectSchema>;
@@ -48,7 +48,7 @@ export const dealSchema = z.object({
   riskLevel: z.enum(["Low", "Medium", "High"]),
   complexity: z.enum(["Simple", "Moderate", "Complex"]),
   phase: z.string(),
-  status: z.enum(["Draft", "Active", "Funded", "Closed"]),
+  status: z.enum(["Draft", "Open", "Active", "Funded", "Closed"]),
 });
 export type Deal = z.infer<typeof dealSchema>;
 export const insertDealSchema = dealSchema.omit({ id: true });
@@ -79,7 +79,7 @@ export const allocationSchema = z.object({
   dealId: z.string(),
   softCommitAmount: z.number(),
   hardCommitAmount: z.number(),
-  status: z.enum(["Pending", "Soft Commit", "Hard Commit", "Funded", "Withdrawn"]),
+  status: z.enum(["Pending", "Approved", "Soft Commit", "Hard Commit", "Funded", "Declined", "Withdrawn"]),
   timestamp: z.string(),
   notes: z.string().optional(),
 });
@@ -94,7 +94,7 @@ export const milestoneSchema = z.object({
   category: z.string(),
   targetDate: z.string(),
   completionDate: z.string().optional(),
-  status: z.enum(["Pending", "In Progress", "Completed", "Delayed"]),
+  status: z.enum(["Not Started", "Pending", "In Progress", "Complete", "Completed", "Delayed"]),
   delayExplanation: z.string().optional(),
   riskFlag: z.boolean(),
 });

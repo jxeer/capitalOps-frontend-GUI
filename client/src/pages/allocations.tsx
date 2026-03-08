@@ -23,7 +23,7 @@ const emptyForm = {
   investorId: "", dealId: "", softCommitAmount: "", hardCommitAmount: "0", status: "Pending", notes: "",
 };
 
-const STATUS_FLOW = ["Pending", "Soft Commit", "Hard Commit", "Funded", "Withdrawn"];
+const STATUS_FLOW = ["Pending", "Approved", "Soft Commit", "Hard Commit", "Funded", "Declined", "Withdrawn"];
 
 export default function Allocations() {
   const { data: allocations, isLoading } = useQuery<Allocation[]>({ queryKey: ["/api/allocations"] });
