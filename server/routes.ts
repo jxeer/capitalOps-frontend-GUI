@@ -340,6 +340,12 @@ export async function registerRoutes(
     res.status(201).json(milestone);
   });
 
+  app.put("/api/milestones/:id", requireAuth, async (req, res) => {
+    const milestone = await storage.updateMilestone(req.params.id, req.body);
+    if (!milestone) return res.status(404).json({ message: "Milestone not found" });
+    res.json(milestone);
+  });
+
   app.delete("/api/milestones/:id", requireAuth, async (req, res) => {
     const deleted = await storage.deleteMilestone(req.params.id);
     if (!deleted) return res.status(404).json({ message: "Milestone not found" });
@@ -412,6 +418,23 @@ export async function registerRoutes(
       const riskFlags = await storage.getRiskFlagsByProject(req.params.projectId);
       res.json(riskFlags);
     });
+  });
+
+  app.post("/api/risk-flags", requireAuth, async (req, res) => {
+    const flag = await storage.createRiskFlag({ ...req.body, createdAt: req.body.createdAt || new Date().toISOString() });
+    res.status(201).json(flag);
+  });
+
+  app.put("/api/risk-flags/:id", requireAuth, async (req, res) => {
+    const flag = await storage.updateRiskFlag(req.params.id, req.body);
+    if (!flag) return res.status(404).json({ message: "Risk flag not found" });
+    res.json(flag);
+  });
+
+  app.delete("/api/risk-flags/:id", requireAuth, async (req, res) => {
+    const deleted = await storage.deleteRiskFlag(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Risk flag not found" });
+    res.json({ message: "Deleted" });
   });
 
   return httpServer;

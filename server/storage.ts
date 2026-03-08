@@ -46,6 +46,7 @@ export interface IStorage {
   getMilestones(): Promise<Milestone[]>;
   getMilestonesByProject(projectId: string): Promise<Milestone[]>;
   createMilestone(milestone: InsertMilestone): Promise<Milestone>;
+  updateMilestone(id: string, milestone: Partial<InsertMilestone>): Promise<Milestone | undefined>;
   deleteMilestone(id: string): Promise<boolean>;
   getVendors(): Promise<Vendor[]>;
   getVendor(id: string): Promise<Vendor | undefined>;
@@ -59,6 +60,9 @@ export interface IStorage {
   deleteWorkOrder(id: string): Promise<boolean>;
   getRiskFlags(): Promise<RiskFlag[]>;
   getRiskFlagsByProject(projectId: string): Promise<RiskFlag[]>;
+  createRiskFlag(riskFlag: Omit<RiskFlag, "id">): Promise<RiskFlag>;
+  updateRiskFlag(id: string, riskFlag: Partial<RiskFlag>): Promise<RiskFlag | undefined>;
+  deleteRiskFlag(id: string): Promise<boolean>;
   getDashboardStats(): Promise<{
     totalAssets: number;
     activeProjects: number;
@@ -350,6 +354,14 @@ export class MemStorage implements IStorage {
     return newMilestone;
   }
 
+  async updateMilestone(id: string, data: Partial<InsertMilestone>): Promise<Milestone | undefined> {
+    const existing = this.milestones.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...data };
+    this.milestones.set(id, updated);
+    return updated;
+  }
+
   async deleteMilestone(id: string): Promise<boolean> {
     return this.milestones.delete(id);
   }
@@ -414,6 +426,25 @@ export class MemStorage implements IStorage {
 
   async getRiskFlagsByProject(projectId: string): Promise<RiskFlag[]> {
     return Array.from(this.riskFlags.values()).filter(r => r.projectId === projectId);
+  }
+
+  async createRiskFlag(data: Omit<RiskFlag, "id">): Promise<RiskFlag> {
+    const id = randomUUID();
+    const newFlag: RiskFlag = { ...data, id };
+    this.riskFlags.set(id, newFlag);
+    return newFlag;
+  }
+
+  async updateRiskFlag(id: string, data: Partial<RiskFlag>): Promise<RiskFlag | undefined> {
+    const existing = this.riskFlags.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...data };
+    this.riskFlags.set(id, updated);
+    return updated;
+  }
+
+  async deleteRiskFlag(id: string): Promise<boolean> {
+    return this.riskFlags.delete(id);
   }
 
   async getDashboardStats() {
