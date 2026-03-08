@@ -22,7 +22,7 @@ import type { Milestone, Project, Asset } from "@shared/schema";
 
 function MilestoneStatusIcon({ status }: { status: string }) {
   switch (status) {
-    case "Completed": return <CheckCircle2 className="h-4 w-4 text-chart-2" />;
+    case "Completed": case "Complete": return <CheckCircle2 className="h-4 w-4 text-chart-2" />;
     case "In Progress": return <Clock className="h-4 w-4 text-chart-1" />;
     case "Delayed": return <AlertTriangle className="h-4 w-4 text-destructive" />;
     default: return <Circle className="h-4 w-4 text-muted-foreground" />;
@@ -144,7 +144,7 @@ export default function Milestones() {
     );
   }
 
-  const completed = milestones?.filter(m => m.status === "Completed").length || 0;
+  const completed = milestones?.filter(m => m.status === "Completed" || m.status === "Complete").length || 0;
   const delayed = milestones?.filter(m => m.status === "Delayed").length || 0;
   const flagged = milestones?.filter(m => m.riskFlag).length || 0;
 
@@ -202,7 +202,7 @@ export default function Milestones() {
                 </div>
               </div>
               <Badge variant="secondary">
-                {projectMilestones.filter(m => m.status === "Completed").length}/{projectMilestones.length}
+                {projectMilestones.filter(m => m.status === "Completed" || m.status === "Complete").length}/{projectMilestones.length}
               </Badge>
             </CardHeader>
             <CardContent>
@@ -312,8 +312,10 @@ export default function Milestones() {
                 <Select value={form.status} onValueChange={(v) => setField("status", v)}>
                   <SelectTrigger data-testid="select-milestone-status"><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="Not Started">Not Started</SelectItem>
                     <SelectItem value="Pending">Pending</SelectItem>
                     <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="Complete">Complete</SelectItem>
                     <SelectItem value="Completed">Completed</SelectItem>
                     <SelectItem value="Delayed">Delayed</SelectItem>
                   </SelectContent>
