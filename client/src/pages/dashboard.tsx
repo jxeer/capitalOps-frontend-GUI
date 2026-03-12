@@ -11,6 +11,9 @@ import {
   ArrowRight,
   Wifi,
   WifiOff,
+  PieChart,
+  Activity,
+  Target,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +24,34 @@ import { PageHeader } from "@/components/page-header";
 import { formatCurrency, getStatusColor, formatDate } from "@/lib/formatters";
 import { Link } from "wouter";
 import type { Deal, Project, RiskFlag, Allocation, Investor } from "@shared/schema";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart as RePieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
+
+// Chart colors for dark theme
+const CHART_COLORS = {
+  primary: "#3b82f6",
+  secondary: "#10b981",
+  tertiary: "#f59e0b",
+  quaternary: "#8b5cf6",
+  accent: "#ec4899",
+  grid: "rgba(255,255,255,0.1)",
+  text: "rgba(255,255,255,0.6)",
+};
+
+const PIE_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
 
 export default function Dashboard() {
   const { data: backendStatus } = useQuery<{
@@ -65,136 +96,298 @@ export default function Dashboard() {
 
   const getInvestorName = (id: string) => investors?.find(i => i.id === id)?.name || "Unknown";
 
+  // Generate capital raised over time data (mock data based on deals)
+  const capitalOverTimeData = deals?.map((deal, index) => ({
+    name: deal.phase || `Deal ${index + 1}`,
+    required: deal.capitalRequired / 1000000,
+    raised: deal.capitalRaised / 1000000,
+  })) || [];
+
+  // Deal pipeline funnel data
+  const dealStatusCounts = deals?.reduce((acc, deal) => {
+    acc[deal.status] = (acc[deal.status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const pipelineData = [
+    { name: "Draft", value: dealStatusCounts?.["Draft"] || 0, fill: PIE_COLORS[0] },
+    { name: "Open", value: dealStatusCounts?.["Open"] || 0, fill: PIE_COLORS[1] },
+    { name: "Active", value: dealStatusCounts?.["Active"] || 0, fill: PIE_COLORS[2] },
+    { name: "Funded", value: dealStatusCounts?.["Funded"] || 0, fill: PIE_COLORS[3] },
+    { name: "Closed", value: dealStatusCounts?.["Closed"] || 0, fill: PIE_COLORS[4] },
+  ].filter(d => d.value > 0);
+
+  // Investor commitment breakdown
+  const allocationStatusData = allocations?.reduce((acc, alloc) => {
+    const status = alloc.status;
+    acc[status] = (acc[status] || 0) + alloc.hardCommitAmount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const commitmentData = Object.entries(allocationStatusData || {})
+    .map(([name, value]) => ({ name, value: value / 1000000 }))
+    .filter(d => d.value > 0);
+
+  // Project budget burn data
+  const projectBudgetData = projects?.map(p => ({
+    name: p.phase?.slice(0, 15) || "Project",
+    budget: p.budgetTotal / 1000000,
+    actual: p.budgetActual / 1000000,
+  })) || [];
+
+  const totalAUM = formatCurrency(stats?.totalCapitalRaised || 0);
+
   return (
     <div className="p-6 space-y-6">
-      <PageHeader
-        title="Portfolio Overview"
-        description="Coral Capital Portfolio performance and operations summary"
-      >
-        {backendStatus && (
-          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium ${
-            backendStatus.connected
-              ? "bg-chart-2/15 text-chart-2"
-              : "bg-chart-3/15 text-chart-3"
-          }`} data-testid="text-backend-status">
-            {backendStatus.connected ? (
-              <><Wifi className="h-3 w-3" /> Backend Connected</>
-            ) : (
-              <><WifiOff className="h-3 w-3" /> Local Mode</>
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-background border p-6">
+        <div className="relative z-10">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Coral Capital Portfolio</h1>
+              <p className="text-muted-foreground mt-1">Real estate investment management platform</p>
+            </div>
+            {backendStatus && (
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium ${
+                backendStatus.connected
+                  ? "bg-chart-2/20 text-chart-2 border border-chart-2/30"
+                  : "bg-chart-3/20 text-chart-3 border border-chart-3/30"
+              }`} data-testid="text-backend-status">
+                {backendStatus.connected ? (
+                  <><Wifi className="h-3 w-3" /> Backend Connected</>
+                ) : (
+                  <><WifiOff className="h-3 w-3" /> Local Mode</>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </PageHeader>
+          <div className="mt-6 flex items-baseline gap-2">
+            <span className="text-5xl font-bold tracking-tight text-primary">{totalAUM}</span>
+            <span className="text-lg text-muted-foreground">Assets Under Management</span>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <Badge variant="secondary" className="bg-chart-2/20 text-chart-2">
+              <TrendingUp className="h-3 w-3 mr-1" />
+              {capitalProgress}% Capital Committed
+            </Badge>
+            <span className="text-sm text-muted-foreground">
+              {formatCurrency(stats?.totalCapitalRaised || 0)} raised of {formatCurrency(stats?.totalCapitalRequired || 0)}
+            </span>
+          </div>
+        </div>
+        {/* Decorative gradient orb */}
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
+      </div>
 
+      {/* Stat Cards with Trends */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Assets"
           value={stats?.totalAssets || 0}
           icon={Building2}
+          trend={{ value: "+12% YoY", positive: true }}
           testId="stat-assets"
         />
         <StatCard
           title="Active Projects"
           value={stats?.activeProjects || 0}
           icon={FolderKanban}
+          trend={{ value: "On track", positive: true }}
           testId="stat-projects"
-        />
-        <StatCard
-          title="Capital Raised"
-          value={formatCurrency(stats?.totalCapitalRaised || 0)}
-          subtitle={`of ${formatCurrency(stats?.totalCapitalRequired || 0)} required`}
-          icon={DollarSign}
-          testId="stat-capital"
         />
         <StatCard
           title="Active Investors"
           value={stats?.totalInvestors || 0}
           icon={Users}
+          trend={{ value: "+3 this month", positive: true }}
           testId="stat-investors"
+        />
+        <StatCard
+          title="Active Deals"
+          value={stats?.activeDeals || 0}
+          icon={Handshake}
+          trend={{ value: `${capitalProgress}% funded`, positive: capitalProgress >= 50 }}
+          testId="stat-active-deals"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-4">
-            <CardTitle className="text-sm font-semibold">Capital Pipeline</CardTitle>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Capital Raised Over Time */}
+        <Card className="min-h-[320px]">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-semibold">Capital Pipeline</CardTitle>
+            </div>
+            <span className="text-xs text-muted-foreground">$ in millions</span>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={capitalOverTimeData}>
+                <defs>
+                  <linearGradient id="colorRaised" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={CHART_COLORS.primary} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={CHART_COLORS.primary} stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorRequired" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={CHART_COLORS.secondary} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={CHART_COLORS.secondary} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
+                <XAxis dataKey="name" tick={{ fill: CHART_COLORS.text, fontSize: 11 }} axisLine={{ stroke: CHART_COLORS.grid }} />
+                <YAxis tick={{ fill: CHART_COLORS.text, fontSize: 11 }} axisLine={{ stroke: CHART_COLORS.grid }} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", border: "none", borderRadius: "8px" }}
+                  labelStyle={{ color: "#fff" }}
+                  formatter={(value: number) => [`$${value}M`, ""]}
+                />
+                <Area type="monotone" dataKey="raised" stroke={CHART_COLORS.primary} fillOpacity={1} fill="url(#colorRaised)" name="Raised" />
+                <Area type="monotone" dataKey="required" stroke={CHART_COLORS.secondary} fillOpacity={1} fill="url(#colorRequired)" name="Required" />
+                <Legend wrapperStyle={{ paddingTop: "10px" }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Deal Pipeline Status */}
+        <Card className="min-h-[320px]">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+            <div className="flex items-center gap-2">
+              <PieChart className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-semibold">Deal Pipeline</CardTitle>
+            </div>
             <Link href="/deals" data-testid="link-view-deals">
-              <span className="text-xs text-primary flex items-center gap-1 cursor-pointer">
+              <span className="text-xs text-primary flex items-center gap-1 cursor-pointer hover:underline">
                 View All <ArrowRight className="h-3 w-3" />
               </span>
             </Link>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {deals?.map((deal) => {
-              const project = projects?.find(p => p.id === deal.projectId);
-              const dealName = (deal as any).projectName || project?.phase || deal.phase || "Unknown";
-              const progress = deal.capitalRequired > 0 ? Math.round((deal.capitalRaised / deal.capitalRequired) * 100) : 0;
-              return (
-                <div key={deal.id} className="space-y-2 p-3 rounded-md bg-accent/30" data-testid={`deal-row-${deal.id}`}>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Handshake className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="text-sm font-medium truncate">{dealName}</span>
-                      <Badge variant="secondary" className={getStatusColor(deal.status)}>
-                        {deal.status}
-                      </Badge>
-                    </div>
-                    <span className="text-sm font-semibold shrink-0">{formatCurrency(deal.capitalRaised)} / {formatCurrency(deal.capitalRequired)}</span>
-                  </div>
-                  <Progress value={progress} className="h-1.5" />
-                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <span>{deal.returnProfile}</span>
-                    <span>{deal.duration} | {deal.riskLevel} Risk</span>
-                  </div>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-4">
-            <CardTitle className="text-sm font-semibold">Risk Alerts</CardTitle>
-            <Badge variant="secondary" className="bg-destructive/15 text-destructive">
-              {stats?.riskFlags || 0} Open
-            </Badge>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {riskFlags?.filter(r => r.status === "Open").map((flag) => {
-              const project = projects?.find(p => p.id === flag.projectId);
-              return (
-                <div key={flag.id} className="p-3 rounded-md bg-accent/30 space-y-1" data-testid={`risk-flag-${flag.id}`}>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <AlertTriangle className={`h-3.5 w-3.5 shrink-0 ${flag.severity === "High" ? "text-chart-5" : "text-chart-3"}`} />
-                      <span className="text-xs font-medium">{flag.category}</span>
-                    </div>
-                    <Badge variant="secondary" className={getStatusColor(flag.severity)}>
-                      {flag.severity}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2">{flag.description}</p>
-                  <p className="text-[10px] text-muted-foreground/70">{project?.phase} | {formatDate(flag.createdAt)}</p>
-                </div>
-              );
-            })}
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <RePieChart>
+                <Pie
+                  data={pipelineData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={4}
+                  dataKey="value"
+                >
+                  {pipelineData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", border: "none", borderRadius: "8px" }}
+                  labelStyle={{ color: "#fff" }}
+                />
+                <Legend wrapperStyle={{ paddingTop: "10px" }} />
+              </RePieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
+      {/* Second Row of Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Project Budget Burn */}
+        <Card className="min-h-[320px]">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+            <div className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-semibold">Project Budget Overview</CardTitle>
+            </div>
+            <span className="text-xs text-muted-foreground">$ in millions</span>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={projectBudgetData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
+                <XAxis dataKey="name" tick={{ fill: CHART_COLORS.text, fontSize: 11 }} axisLine={{ stroke: CHART_COLORS.grid }} />
+                <YAxis tick={{ fill: CHART_COLORS.text, fontSize: 11 }} axisLine={{ stroke: CHART_COLORS.grid }} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", border: "none", borderRadius: "8px" }}
+                  labelStyle={{ color: "#fff" }}
+                  formatter={(value: number) => [`$${value}M`, ""]}
+                />
+                <Bar dataKey="budget" fill={CHART_COLORS.primary} name="Budget" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="actual" fill={CHART_COLORS.tertiary} name="Actual" radius={[4, 4, 0, 0]} />
+                <Legend wrapperStyle={{ paddingTop: "10px" }} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity & Risk Alerts */}
+        <div className="space-y-4">
+          {/* Risk Alerts */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <CardTitle className="text-sm font-semibold">Risk Alerts</CardTitle>
+              </div>
+              <Badge variant="secondary" className="bg-destructive/15 text-destructive">
+                {stats?.riskFlags || 0} Open
+              </Badge>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {riskFlags?.filter(r => r.status === "Open").slice(0, 3).map((flag) => {
+                const project = projects?.find(p => p.id === flag.projectId);
+                return (
+                  <div key={flag.id} className="p-3 rounded-lg bg-accent/30 border-l-2 border-l-chart-5 space-y-1" data-testid={`risk-flag-${flag.id}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-medium">{flag.category}</span>
+                      </div>
+                      <Badge variant="secondary" className={getStatusColor(flag.severity)}>
+                        {flag.severity}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{flag.description}</p>
+                    <p className="text-[10px] text-muted-foreground/70">{project?.phase} | {formatDate(flag.createdAt)}</p>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 gap-4">
+            <StatCard
+              title="Capital Progress"
+              value={`${capitalProgress}%`}
+              subtitle="Overall portfolio"
+              icon={TrendingUp}
+              testId="stat-capital-progress"
+            />
+            <StatCard
+              title="Open Work Orders"
+              value={stats?.openWorkOrders || 0}
+              icon={ClipboardList}
+              testId="stat-work-orders"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Allocations & Execution Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-4">
             <CardTitle className="text-sm font-semibold">Recent Allocations</CardTitle>
             <Link href="/allocations" data-testid="link-view-allocations">
-              <span className="text-xs text-primary flex items-center gap-1 cursor-pointer">
+              <span className="text-xs text-primary flex items-center gap-1 cursor-pointer hover:underline">
                 View All <ArrowRight className="h-3 w-3" />
               </span>
             </Link>
           </CardHeader>
           <CardContent className="space-y-3">
             {allocations?.slice(0, 4).map((alloc) => (
-              <div key={alloc.id} className="flex items-center justify-between gap-3 p-3 rounded-md bg-accent/30" data-testid={`allocation-row-${alloc.id}`}>
+              <div key={alloc.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-accent/30" data-testid={`allocation-row-${alloc.id}`}>
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{getInvestorName(alloc.investorId)}</p>
                   <p className="text-xs text-muted-foreground">
@@ -211,69 +404,39 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-4">
-            <CardTitle className="text-sm font-semibold">Execution Summary</CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">
-                <ClipboardList className="h-3 w-3 mr-1" />
-                {stats?.openWorkOrders || 0} Open WOs
-              </Badge>
-            </div>
+            <CardTitle className="text-sm font-semibold">Active Deals</CardTitle>
+            <Link href="/deals" data-testid="link-view-deals">
+              <span className="text-xs text-primary flex items-center gap-1 cursor-pointer hover:underline">
+                View All <ArrowRight className="h-3 w-3" />
+              </span>
+            </Link>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {projects?.map((project) => {
-              const budgetUsed = project.budgetTotal > 0 ? Math.round((project.budgetActual / project.budgetTotal) * 100) : 0;
+          <CardContent className="space-y-4">
+            {deals?.slice(0, 3).map((deal) => {
+              const project = projects?.find(p => p.id === deal.projectId);
+              const dealName = (deal as any).projectName || project?.phase || deal.phase || "Unknown";
+              const progress = deal.capitalRequired > 0 ? Math.round((deal.capitalRaised / deal.capitalRequired) * 100) : 0;
               return (
-                <div key={project.id} className="p-3 rounded-md bg-accent/30 space-y-2" data-testid={`project-summary-${project.id}`}>
+                <div key={deal.id} className="space-y-2 p-3 rounded-lg bg-accent/30" data-testid={`deal-row-${deal.id}`}>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <FolderKanban className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="text-sm font-medium truncate">{(project as any).assetName || project.phase}</span>
+                      <Handshake className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm font-medium truncate">{dealName}</span>
                     </div>
-                    <Badge variant="secondary" className={getStatusColor(project.status)}>
-                      {project.status}
+                    <Badge variant="secondary" className={getStatusColor(deal.status)}>
+                      {deal.status}
                     </Badge>
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                      <span>Budget: {formatCurrency(project.budgetActual)} / {formatCurrency(project.budgetTotal)}</span>
-                      <span>{budgetUsed}%</span>
-                    </div>
-                    <Progress value={budgetUsed} className="h-1.5" />
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">{formatCurrency(deal.capitalRaised)} / {formatCurrency(deal.capitalRequired)}</span>
+                    <span className="font-medium text-primary">{progress}%</span>
                   </div>
-                  <p className="text-[10px] text-muted-foreground/70">PM: {project.pmAssigned} | Target: {formatDate(project.targetCompletion)}</p>
+                  <Progress value={progress} className="h-1.5" />
                 </div>
               );
             })}
           </CardContent>
         </Card>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Active Deals"
-          value={stats?.activeDeals || 0}
-          icon={Handshake}
-          testId="stat-active-deals"
-        />
-        <StatCard
-          title="Capital Progress"
-          value={`${capitalProgress}%`}
-          subtitle="Overall portfolio"
-          icon={TrendingUp}
-          testId="stat-capital-progress"
-        />
-        <StatCard
-          title="Open Work Orders"
-          value={stats?.openWorkOrders || 0}
-          icon={ClipboardList}
-          testId="stat-work-orders"
-        />
-        <StatCard
-          title="Risk Flags"
-          value={stats?.riskFlags || 0}
-          icon={AlertTriangle}
-          testId="stat-risk-flags"
-        />
       </div>
     </div>
   );

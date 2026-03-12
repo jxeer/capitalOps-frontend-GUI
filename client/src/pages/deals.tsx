@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Handshake, TrendingUp, Clock, Plus, Trash2, Pencil, Users, CheckCircle2 } from "lucide-react";
+import { Handshake, TrendingUp, Clock, Plus, Trash2, Pencil, Users, CheckCircle2, LayoutGrid, List, Building2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
+import { DealCard } from "@/components/deal-card";
 import { formatCurrency, getStatusColor } from "@/lib/formatters";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -53,6 +55,7 @@ export default function Deals() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Deal | null>(null);
   const [expandedMatches, setExpandedMatches] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<"list" | "cards">("cards");
   const [form, setForm] = useState(emptyForm);
 
   const setField = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
@@ -172,11 +175,21 @@ export default function Deals() {
         title="Deal Pipeline"
         description="Capital distribution and deal management"
       >
-        {user && (
-          <Button size="sm" onClick={openCreate} data-testid="button-new-deal">
-            <Plus className="h-4 w-4 mr-1" /> New Deal
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as "list" | "cards")}>
+            <ToggleGroupItem value="cards" aria-label="Card view">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="List view">
+              <List className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+          {user && (
+            <Button size="sm" onClick={openCreate} data-testid="button-new-deal">
+              <Plus className="h-4 w-4 mr-1" /> New Deal
+            </Button>
+          )}
+        </div>
       </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -191,6 +204,29 @@ export default function Deals() {
         <StatCard title="Active Deals" value={deals?.filter(d => d.status === "Active").length || 0} icon={Handshake} testId="stat-active-deals" />
       </div>
 
+      {viewMode === "cards" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {deals?.map((deal) => {
+            const project = projects?.find(p => p.id === deal.projectId);
+            const asset = project ? assets?.find(a => a.id === project.assetId) : undefined;
+            const progress = deal.capitalRequired > 0 ? Math.round((deal.capitalRaised / deal.capitalRequired) * 100) : 0;
+            const matched = investors ? getMatchedInvestors(deal, investors, asset) : [];
+            return (
+              <DealCard
+                key={deal.id}
+                deal={deal}
+                project={project}
+                asset={asset}
+                matchedInvestors={matched}
+                progress={progress}
+                onView={() => openEdit(deal)}
+                onInvest={() => openEdit(deal)}
+                testId={`card-deal-${deal.id}`}
+              />
+            );
+          })}
+        </div>
+      ) : (
       <div className="space-y-4">
         {deals?.map((deal) => {
           const project = projects?.find(p => p.id === deal.projectId);
@@ -344,6 +380,7 @@ export default function Deals() {
           );
         })}
       </div>
+      )}
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) closeDialog(); else setOpen(true); }}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">

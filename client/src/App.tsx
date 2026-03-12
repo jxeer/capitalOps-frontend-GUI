@@ -21,6 +21,7 @@ import Milestones from "@/pages/milestones";
 import RiskFlags from "@/pages/risk-flags";
 import Vendors from "@/pages/vendors";
 import WorkOrders from "@/pages/work-orders";
+import InvestorPortal from "@/pages/investor-portal";
 import AuthPage from "@/pages/auth-page";
 
 function ThemeToggle() {
@@ -70,6 +71,7 @@ function Router() {
       <Route path="/risk-flags" component={RiskFlags} />
       <Route path="/vendors" component={Vendors} />
       <Route path="/work-orders" component={WorkOrders} />
+      <Route path="/investor-portal" component={InvestorPortal} />
       <Route component={NotFound} />
     </Switch>
   );
