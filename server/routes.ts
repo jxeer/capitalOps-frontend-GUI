@@ -68,9 +68,10 @@ async function withMergedList<T extends { id: string }>(
   if (result.ok && Array.isArray(result.data)) {
     log(`Proxied GET ${backendPath} -> backend (${result.status})`, "proxy");
     const localItems = await getLocal();
-    const userCreated = localItems.filter(item => !isSeedId(item.id));
     const backendIds = new Set((result.data as T[]).map(item => item.id));
-    const merged = [...(result.data as T[]), ...userCreated.filter(item => !backendIds.has(item.id))];
+    // Include seed items not covered by backend + any user-created local items
+    const localNotInBackend = localItems.filter(item => !backendIds.has(item.id));
+    const merged = [...(result.data as T[]), ...localNotInBackend];
     return res.json(merged);
   }
 

@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Truck, Shield, Star, Plus, Trash2, Pencil } from "lucide-react";
+import { Truck, Shield, Star, Plus, Trash2, Pencil, CheckCircle2, XCircle, Clock, Wrench } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +20,42 @@ import type { Vendor, Asset, WorkOrder } from "@shared/schema";
 
 const emptyForm = { assetId: "", name: "", type: "", coiStatus: "Current", slaType: "", performanceScore: "85" };
 
+function PerformanceGauge({ score }: { score: number }) {
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const progress = (score / 100) * circumference;
+  const color = score >= 90 ? "hsl(var(--chart-2))" : score >= 75 ? "hsl(var(--chart-3))" : "hsl(var(--destructive))";
+  const textColor = score >= 90 ? "text-chart-2" : score >= 75 ? "text-chart-3" : "text-destructive";
+  const label = score >= 90 ? "Excellent" : score >= 75 ? "Good" : "At Risk";
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="relative">
+        <svg width="88" height="88" className="transform -rotate-90">
+          <circle cx="44" cy="44" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="6" opacity="0.4" />
+          <circle
+            cx="44" cy="44" r={radius} fill="none"
+            stroke={color} strokeWidth="6" strokeLinecap="round"
+            strokeDasharray={`${progress} ${circumference}`}
+            className="transition-all duration-1000"
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className={`text-xl font-bold ${textColor}`}>{score}</span>
+          <span className="text-[8px] text-muted-foreground uppercase tracking-wide">/100</span>
+        </div>
+      </div>
+      <span className={`text-[10px] font-semibold ${textColor}`}>{label}</span>
+    </div>
+  );
+}
+
+function CoiIcon({ status }: { status: string }) {
+  if (status === "Current") return <CheckCircle2 className="h-3.5 w-3.5 text-chart-2" />;
+  if (status === "Expired") return <XCircle className="h-3.5 w-3.5 text-destructive" />;
+  return <Clock className="h-3.5 w-3.5 text-chart-3" />;
+}
+
 export default function Vendors() {
   const { data: vendors, isLoading } = useQuery<Vendor[]>({ queryKey: ["/api/vendors"] });
   const { data: assets } = useQuery<Asset[]>({ queryKey: ["/api/assets"] });
@@ -33,7 +68,6 @@ export default function Vendors() {
   const [form, setForm] = useState(emptyForm);
 
   const setField = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
-
   const openCreate = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
   const openEdit = (v: Vendor) => {
     setEditing(v);
@@ -43,54 +77,27 @@ export default function Vendors() {
   const closeDialog = () => { setOpen(false); setEditing(null); setForm(emptyForm); };
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/vendors", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/vendors"] });
-      toast({ title: "Vendor created" });
-      closeDialog();
-    },
-    onError: (err: Error) => {
-      toast({ title: "Failed to create vendor", description: err.message, variant: "destructive" });
-    },
+    mutationFn: async (data: any) => { const res = await apiRequest("POST", "/api/vendors", data); return res.json(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/vendors"] }); toast({ title: "Vendor created" }); closeDialog(); },
+    onError: (err: Error) => { toast({ title: "Failed to create vendor", description: err.message, variant: "destructive" }); },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const res = await apiRequest("PUT", `/api/vendors/${id}`, data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/vendors"] });
-      toast({ title: "Vendor updated" });
-      closeDialog();
-    },
-    onError: (err: Error) => {
-      toast({ title: "Failed to update vendor", description: err.message, variant: "destructive" });
-    },
+    mutationFn: async ({ id, data }: { id: string; data: any }) => { const res = await apiRequest("PUT", `/api/vendors/${id}`, data); return res.json(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/vendors"] }); toast({ title: "Vendor updated" }); closeDialog(); },
+    onError: (err: Error) => { toast({ title: "Failed to update vendor", description: err.message, variant: "destructive" }); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/vendors/${id}`); },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/vendors"] });
-      toast({ title: "Vendor deleted" });
-    },
-    onError: (err: Error) => {
-      toast({ title: "Failed to delete", description: err.message, variant: "destructive" });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/vendors"] }); toast({ title: "Vendor deleted" }); },
+    onError: (err: Error) => { toast({ title: "Failed to delete", description: err.message, variant: "destructive" }); },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { ...form, performanceScore: Number(form.performanceScore) || 0 };
-    if (editing) {
-      updateMutation.mutate({ id: editing.id, data: payload });
-    } else {
-      createMutation.mutate(payload);
-    }
+    if (editing) { updateMutation.mutate({ id: editing.id, data: payload }); } else { createMutation.mutate(payload); }
   };
 
   if (isLoading) {
@@ -98,7 +105,7 @@ export default function Vendors() {
       <div className="p-6 space-y-6">
         <Skeleton className="h-8 w-48" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-44" />)}
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-52" />)}
         </div>
       </div>
     );
@@ -111,10 +118,7 @@ export default function Vendors() {
 
   return (
     <div className="p-6 space-y-6">
-      <PageHeader
-        title="Vendors"
-        description="Vendor management and performance tracking"
-      >
+      <PageHeader title="Vendors" description="Vendor management and performance tracking">
         {user && (
           <Button size="sm" onClick={openCreate} data-testid="button-new-vendor">
             <Plus className="h-4 w-4 mr-1" /> New Vendor
@@ -133,76 +137,77 @@ export default function Vendors() {
           const asset = assets?.find(a => a.id === vendor.assetId);
           const vendorWOs = workOrders?.filter(w => w.vendorId === vendor.id) || [];
           const openWOs = vendorWOs.filter(w => w.status === "Open" || w.status === "In Progress").length;
+          const completedWOs = vendorWOs.filter(w => w.status === "Completed").length;
 
           return (
-            <Card key={vendor.id} className="hover-elevate" data-testid={`card-vendor-${vendor.id}`}>
-              <CardContent className="p-5 space-y-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                      <Truck className="h-5 w-5 text-primary" />
+            <Card key={vendor.id} className="group hover:shadow-xl transition-all duration-300 hover:scale-[1.01] overflow-hidden" data-testid={`card-vendor-${vendor.id}`}>
+              <CardContent className="p-0">
+                {/* Card header section */}
+                <div className="p-5 flex items-start gap-4">
+                  {/* Performance gauge */}
+                  <PerformanceGauge score={vendor.performanceScore} />
+
+                  {/* Vendor info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-bold truncate" data-testid={`text-vendor-name-${vendor.id}`}>{vendor.name}</h3>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10">
+                            <Wrench className="h-3 w-3 text-primary" />
+                          </div>
+                          <p className="text-xs text-muted-foreground">{vendor.type}</p>
+                        </div>
+                      </div>
+                      {user && (
+                        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(vendor)} aria-label="Edit vendor" data-testid={`button-edit-vendor-${vendor.id}`}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" data-testid={`button-delete-vendor-${vendor.id}`} aria-label="Delete vendor">
+                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete {vendor.name}?</AlertDialogTitle>
+                                <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteMutation.mutate(vendor.id)}>Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      )}
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-semibold truncate" data-testid={`text-vendor-name-${vendor.id}`}>{vendor.name}</h3>
-                      <p className="text-xs text-muted-foreground">{vendor.type}</p>
+
+                    {/* COI status */}
+                    <div className="flex items-center gap-1.5 mt-2 p-2 rounded-lg bg-accent/40">
+                      <CoiIcon status={vendor.coiStatus} />
+                      <span className="text-xs font-medium">COI: {vendor.coiStatus}</span>
+                      <span className="text-xs text-muted-foreground ml-auto">{vendor.slaType}</span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant="secondary" className={getStatusColor(vendor.coiStatus)}>
-                      COI: {vendor.coiStatus}
-                    </Badge>
-                    {user && (
-                      <>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(vendor)} aria-label="Edit vendor" data-testid={`button-edit-vendor-${vendor.id}`}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" data-testid={`button-delete-vendor-${vendor.id}`} aria-label="Delete vendor">
-                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete {vendor.name}?</AlertDialogTitle>
-                              <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteMutation.mutate(vendor.id)}>Delete</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </>
-                    )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Asset</p>
-                    <p className="text-sm font-medium truncate">{asset?.name || "Unknown"}</p>
+                {/* Bottom stats strip */}
+                <div className="border-t border-border/50 grid grid-cols-3 divide-x divide-border/50">
+                  <div className="p-3 text-center">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Asset</p>
+                    <p className="text-xs font-semibold mt-0.5 truncate px-1">{asset?.name?.split(" ")[0] || "—"}</p>
                   </div>
-                  <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">SLA</p>
-                    <p className="text-sm font-medium">{vendor.slaType}</p>
+                  <div className="p-3 text-center">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Open WOs</p>
+                    <p className={`text-xs font-semibold mt-0.5 ${openWOs > 0 ? "text-chart-3" : "text-muted-foreground"}`}>{openWOs}</p>
                   </div>
-                  <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Open WOs</p>
-                    <p className="text-sm font-medium">{openWOs}</p>
+                  <div className="p-3 text-center">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Completed</p>
+                    <p className="text-xs font-semibold mt-0.5 text-chart-2">{completedWOs}</p>
                   </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="text-muted-foreground">Performance Score</span>
-                    <span className={`font-semibold ${
-                      vendor.performanceScore >= 90 ? "text-chart-2" :
-                      vendor.performanceScore >= 80 ? "text-chart-1" :
-                      "text-chart-5"
-                    }`}>{vendor.performanceScore}/100</span>
-                  </div>
-                  <Progress value={vendor.performanceScore} className="h-1.5" />
                 </div>
               </CardContent>
             </Card>
@@ -230,9 +235,7 @@ export default function Vendors() {
                 <Select value={form.assetId} onValueChange={(v) => setField("assetId", v)}>
                   <SelectTrigger data-testid="select-vendor-asset"><SelectValue placeholder="Select asset" /></SelectTrigger>
                   <SelectContent>
-                    {assets?.map(a => (
-                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-                    ))}
+                    {assets?.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

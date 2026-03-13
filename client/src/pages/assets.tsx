@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Building2, MapPin, Maximize2, Plus, Trash2, Pencil } from "lucide-react";
+import { Building2, MapPin, Maximize2, Plus, Trash2, Pencil, Layers, Home, Briefcase, ShoppingBag } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,22 @@ const emptyForm = {
   name: "", location: "", assetType: "", squareFootage: "", status: "Active", assetManager: "",
 };
 
+function getAssetMeta(type: string): { icon: typeof Building2; gradient: string; iconBg: string; iconColor: string } {
+  const t = type.toLowerCase();
+  if (t.includes("mixed")) return { icon: Layers, gradient: "from-chart-1/20 to-chart-4/10", iconBg: "bg-chart-1/15", iconColor: "text-chart-1" };
+  if (t.includes("multi") || t.includes("resid")) return { icon: Home, gradient: "from-chart-2/20 to-chart-1/10", iconBg: "bg-chart-2/15", iconColor: "text-chart-2" };
+  if (t.includes("office") || t.includes("comm")) return { icon: Briefcase, gradient: "from-chart-4/20 to-chart-1/10", iconBg: "bg-chart-4/15", iconColor: "text-chart-4" };
+  if (t.includes("retail")) return { icon: ShoppingBag, gradient: "from-chart-3/20 to-chart-1/10", iconBg: "bg-chart-3/15", iconColor: "text-chart-3" };
+  return { icon: Building2, gradient: "from-primary/20 to-primary/5", iconBg: "bg-primary/10", iconColor: "text-primary" };
+}
+
+function getStatusDot(status: string) {
+  if (status === "Active") return "bg-chart-2";
+  if (status === "Stabilized") return "bg-chart-1";
+  if (status === "Pre-dev") return "bg-chart-3";
+  return "bg-muted-foreground";
+}
+
 export default function Assets() {
   const { data: assets, isLoading } = useQuery<Asset[]>({ queryKey: ["/api/assets"] });
   const { user } = useAuth();
@@ -33,87 +49,36 @@ export default function Assets() {
 
   const setField = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
 
-  const openCreate = () => {
-    setEditing(null);
-    setForm(emptyForm);
-    setOpen(true);
-  };
-
+  const openCreate = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
   const openEdit = (asset: Asset) => {
     setEditing(asset);
-    setForm({
-      name: asset.name,
-      location: asset.location,
-      assetType: asset.assetType,
-      squareFootage: String(asset.squareFootage),
-      status: asset.status,
-      assetManager: asset.assetManager,
-    });
+    setForm({ name: asset.name, location: asset.location, assetType: asset.assetType, squareFootage: String(asset.squareFootage), status: asset.status, assetManager: asset.assetManager });
     setOpen(true);
   };
-
-  const closeDialog = () => {
-    setOpen(false);
-    setEditing(null);
-    setForm(emptyForm);
-  };
+  const closeDialog = () => { setOpen(false); setEditing(null); setForm(emptyForm); };
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/assets", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      toast({ title: "Asset created" });
-      closeDialog();
-    },
-    onError: (err: Error) => {
-      toast({ title: "Failed to create asset", description: err.message, variant: "destructive" });
-    },
+    mutationFn: async (data: any) => { const res = await apiRequest("POST", "/api/assets", data); return res.json(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/assets"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Asset created" }); closeDialog(); },
+    onError: (err: Error) => { toast({ title: "Failed to create asset", description: err.message, variant: "destructive" }); },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const res = await apiRequest("PUT", `/api/assets/${id}`, data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      toast({ title: "Asset updated" });
-      closeDialog();
-    },
-    onError: (err: Error) => {
-      toast({ title: "Failed to update asset", description: err.message, variant: "destructive" });
-    },
+    mutationFn: async ({ id, data }: { id: string; data: any }) => { const res = await apiRequest("PUT", `/api/assets/${id}`, data); return res.json(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/assets"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Asset updated" }); closeDialog(); },
+    onError: (err: Error) => { toast({ title: "Failed to update asset", description: err.message, variant: "destructive" }); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/assets/${id}`); },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      toast({ title: "Asset deleted" });
-    },
-    onError: (err: Error) => {
-      toast({ title: "Failed to delete asset", description: err.message, variant: "destructive" });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/assets"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Asset deleted" }); },
+    onError: (err: Error) => { toast({ title: "Failed to delete asset", description: err.message, variant: "destructive" }); },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = {
-      ...form,
-      portfolioId: "port-001",
-      squareFootage: Number(form.squareFootage) || 0,
-    };
-    if (editing) {
-      updateMutation.mutate({ id: editing.id, data: payload });
-    } else {
-      createMutation.mutate(payload);
-    }
+    const payload = { ...form, portfolioId: "port-001", squareFootage: Number(form.squareFootage) || 0 };
+    if (editing) { updateMutation.mutate({ id: editing.id, data: payload }); } else { createMutation.mutate(payload); }
   };
 
   if (isLoading) {
@@ -121,7 +86,7 @@ export default function Assets() {
       <div className="p-6 space-y-6">
         <Skeleton className="h-8 w-48" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-44" />)}
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-52" />)}
         </div>
       </div>
     );
@@ -133,10 +98,7 @@ export default function Assets() {
 
   return (
     <div className="p-6 space-y-6">
-      <PageHeader
-        title="Assets"
-        description="Portfolio asset management and health overview"
-      >
+      <PageHeader title="Assets" description="Portfolio asset management and property overview">
         {user && (
           <Button size="sm" onClick={openCreate} data-testid="button-new-asset">
             <Plus className="h-4 w-4 mr-1" /> New Asset
@@ -152,34 +114,68 @@ export default function Assets() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {assets?.map((asset) => (
-          <Card key={asset.id} className="hover-elevate" data-testid={`card-asset-${asset.id}`}>
-            <CardContent className="p-5 space-y-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                    <Building2 className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-semibold truncate" data-testid={`text-asset-name-${asset.id}`}>{asset.name}</h3>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3 shrink-0" />
-                      <span>{asset.location}</span>
+        {assets?.map((asset) => {
+          const meta = getAssetMeta(asset.assetType);
+          const AssetIcon = meta.icon;
+          return (
+            <Card key={asset.id} className="group hover:shadow-xl transition-all duration-300 hover:scale-[1.01] overflow-hidden" data-testid={`card-asset-${asset.id}`}>
+              {/* Gradient header */}
+              <div className={`bg-gradient-to-r ${meta.gradient} px-5 pt-5 pb-4`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${meta.iconBg} ring-1 ring-white/10`}>
+                      <AssetIcon className={`h-5 w-5 ${meta.iconColor}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-bold truncate" data-testid={`text-asset-name-${asset.id}`}>{asset.name}</h3>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{asset.location}</span>
+                      </div>
                     </div>
                   </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className={`h-2 w-2 rounded-full ${getStatusDot(asset.status)}`} />
+                    <Badge variant="secondary" className={`${getStatusColor(asset.status)} text-[10px]`}>
+                      {asset.status}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge variant="secondary" className={getStatusColor(asset.status)}>
-                    {asset.status}
-                  </Badge>
+              </div>
+
+              <CardContent className="p-5 pt-4 space-y-4">
+                {/* Stats grid */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="p-2.5 rounded-lg bg-accent/40 space-y-0.5 text-center">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Type</p>
+                    <p className="text-xs font-semibold leading-tight">{asset.assetType}</p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-accent/40 space-y-0.5 text-center">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Sq Ft</p>
+                    <div className="flex items-center justify-center gap-0.5">
+                      <Maximize2 className="h-2.5 w-2.5 text-muted-foreground" />
+                      <p className="text-xs font-semibold">{formatNumber(asset.squareFootage)}</p>
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-accent/40 space-y-0.5 text-center">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Manager</p>
+                    <p className="text-xs font-semibold leading-tight truncate">{asset.assetManager.split(" ")[0]}</p>
+                  </div>
+                </div>
+
+                {/* Footer with manager and actions */}
+                <div className="flex items-center justify-between pt-1 border-t border-border/50">
+                  <p className="text-xs text-muted-foreground">
+                    Managed by <span className="text-foreground font-medium">{asset.assetManager}</span>
+                  </p>
                   {user && (
-                    <>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(asset)} aria-label="Edit asset" data-testid={`button-edit-asset-${asset.id}`}>
+                    <div className="flex items-center gap-1">
+                      <Button size="icon" variant="ghost" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => openEdit(asset)} aria-label="Edit asset" data-testid={`button-edit-asset-${asset.id}`}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" data-testid={`button-delete-asset-${asset.id}`} aria-label="Delete asset">
+                          <Button size="icon" variant="ghost" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" data-testid={`button-delete-asset-${asset.id}`} aria-label="Delete asset">
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </Button>
                         </AlertDialogTrigger>
@@ -194,33 +190,13 @@ export default function Assets() {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
-                    </>
+                    </div>
                   )}
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-0.5">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Type</p>
-                  <p className="text-sm font-medium">{asset.assetType}</p>
-                </div>
-                <div className="space-y-0.5">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Square Footage</p>
-                  <div className="flex items-center gap-1">
-                    <Maximize2 className="h-3 w-3 text-muted-foreground" />
-                    <p className="text-sm font-medium">{formatNumber(asset.squareFootage)} SF</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-border">
-                <p className="text-xs text-muted-foreground">
-                  Asset Manager: <span className="text-foreground font-medium">{asset.assetManager}</span>
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) closeDialog(); else setOpen(true); }}>

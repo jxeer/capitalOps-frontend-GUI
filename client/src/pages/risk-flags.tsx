@@ -21,9 +21,13 @@ import type { RiskFlag, Project, Asset } from "@shared/schema";
 
 const RISK_CATEGORIES = ["Budget", "Schedule", "Permitting", "Contractor", "Market", "Legal", "Environmental", "Structural", "Other"];
 
-const emptyForm = {
-  projectId: "", category: RISK_CATEGORIES[0], severity: "Medium",
-  description: "", status: "Open",
+const emptyForm = { projectId: "", category: RISK_CATEGORIES[0], severity: "Medium", description: "", status: "Open" };
+
+const SEVERITY_META: Record<string, { bg: string; text: string; border: string; dot: string; leftBorder: string; rowBg: string }> = {
+  Low:      { bg: "bg-chart-2/10", text: "text-chart-2", border: "border-chart-2/30", dot: "bg-chart-2", leftBorder: "border-l-4 border-l-chart-2", rowBg: "hover:bg-chart-2/5" },
+  Medium:   { bg: "bg-chart-3/10", text: "text-chart-3", border: "border-chart-3/30", dot: "bg-chart-3", leftBorder: "border-l-4 border-l-chart-3", rowBg: "hover:bg-chart-3/5" },
+  High:     { bg: "bg-destructive/10", text: "text-destructive", border: "border-destructive/30", dot: "bg-destructive", leftBorder: "border-l-4 border-l-destructive", rowBg: "hover:bg-destructive/5" },
+  Critical: { bg: "bg-chart-5/15", text: "text-chart-5", border: "border-chart-5/40", dot: "bg-chart-5", leftBorder: "border-l-4 border-l-chart-5", rowBg: "hover:bg-chart-5/5" },
 };
 
 export default function RiskFlags() {
@@ -38,99 +42,47 @@ export default function RiskFlags() {
   const [form, setForm] = useState(emptyForm);
 
   const setField = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
-
-  const openCreate = () => {
-    setEditing(null);
-    setForm(emptyForm);
-    setOpen(true);
-  };
-
+  const openCreate = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
   const openEdit = (flag: RiskFlag) => {
     setEditing(flag);
-    setForm({
-      projectId: flag.projectId,
-      category: flag.category,
-      severity: flag.severity,
-      description: flag.description,
-      status: flag.status,
-    });
+    setForm({ projectId: flag.projectId, category: flag.category, severity: flag.severity, description: flag.description, status: flag.status });
     setOpen(true);
   };
-
-  const closeDialog = () => {
-    setOpen(false);
-    setEditing(null);
-    setForm(emptyForm);
-  };
+  const closeDialog = () => { setOpen(false); setEditing(null); setForm(emptyForm); };
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/risk-flags", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/risk-flags"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      toast({ title: "Risk flag created" });
-      closeDialog();
-    },
-    onError: (err: Error) => {
-      toast({ title: "Failed to create risk flag", description: err.message, variant: "destructive" });
-    },
+    mutationFn: async (data: any) => { const res = await apiRequest("POST", "/api/risk-flags", data); return res.json(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/risk-flags"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Risk flag created" }); closeDialog(); },
+    onError: (err: Error) => { toast({ title: "Failed to create risk flag", description: err.message, variant: "destructive" }); },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const res = await apiRequest("PUT", `/api/risk-flags/${id}`, data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/risk-flags"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      toast({ title: "Risk flag updated" });
-      closeDialog();
-    },
-    onError: (err: Error) => {
-      toast({ title: "Failed to update", description: err.message, variant: "destructive" });
-    },
+    mutationFn: async ({ id, data }: { id: string; data: any }) => { const res = await apiRequest("PUT", `/api/risk-flags/${id}`, data); return res.json(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/risk-flags"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Risk flag updated" }); closeDialog(); },
+    onError: (err: Error) => { toast({ title: "Failed to update", description: err.message, variant: "destructive" }); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/risk-flags/${id}`); },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/risk-flags"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      toast({ title: "Risk flag deleted" });
-    },
-    onError: (err: Error) => {
-      toast({ title: "Failed to delete", description: err.message, variant: "destructive" });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/risk-flags"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Risk flag deleted" }); },
+    onError: (err: Error) => { toast({ title: "Failed to delete", description: err.message, variant: "destructive" }); },
   });
 
   const quickStatus = (flag: RiskFlag, newStatus: string) => {
-    updateMutation.mutate({
-      id: flag.id,
-      data: { ...flag, status: newStatus },
-    });
+    updateMutation.mutate({ id: flag.id, data: { ...flag, status: newStatus } });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { ...form, createdAt: editing?.createdAt || new Date().toISOString() };
-    if (editing) {
-      updateMutation.mutate({ id: editing.id, data: payload });
-    } else {
-      createMutation.mutate(payload);
-    }
+    if (editing) { updateMutation.mutate({ id: editing.id, data: payload }); } else { createMutation.mutate(payload); }
   };
 
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
         <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-28" />)}
-        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-28" />)}</div>
       </div>
     );
   }
@@ -140,13 +92,6 @@ export default function RiskFlags() {
   const highSeverity = riskFlags?.filter(r => r.severity === "High" || r.severity === "Critical") || [];
 
   const SEVERITIES = ["Low", "Medium", "High", "Critical"] as const;
-  const severityMeta: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-    Low:      { bg: "bg-chart-2/10",     text: "text-chart-2",     border: "border-chart-2/30",     dot: "bg-chart-2" },
-    Medium:   { bg: "bg-chart-3/10",     text: "text-chart-3",     border: "border-chart-3/30",     dot: "bg-chart-3" },
-    High:     { bg: "bg-destructive/10", text: "text-destructive", border: "border-destructive/30", dot: "bg-destructive" },
-    Critical: { bg: "bg-chart-5/15",     text: "text-chart-5",     border: "border-chart-5/40",     dot: "bg-chart-5" },
-  };
-
   const severityCounts = SEVERITIES.map(sev => ({
     label: sev,
     open: riskFlags?.filter(r => r.severity === sev && r.status === "Open").length || 0,
@@ -163,12 +108,18 @@ export default function RiskFlags() {
 
   const maxCategoryCount = Math.max(...categoryBreakdown.map(c => c.count), 1);
 
+  // Sort flags: Critical/High first, then by status (Open first)
+  const sortedFlags = [...(riskFlags || [])].sort((a, b) => {
+    const sevOrder = ["Critical", "High", "Medium", "Low"];
+    const statusOrder = ["Open", "Mitigated", "Resolved"];
+    const sevDiff = sevOrder.indexOf(a.severity) - sevOrder.indexOf(b.severity);
+    if (sevDiff !== 0) return sevDiff;
+    return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
+  });
+
   return (
     <div className="p-6 space-y-6">
-      <PageHeader
-        title="Risk Flags"
-        description="Governance risk monitoring and mitigation tracking"
-      >
+      <PageHeader title="Risk Flags" description="Governance risk monitoring and mitigation tracking">
         {user && (
           <Button size="sm" onClick={openCreate} data-testid="button-new-risk">
             <Plus className="h-4 w-4 mr-1" /> New Risk Flag
@@ -182,9 +133,9 @@ export default function RiskFlags() {
         <StatCard title="Mitigated" value={mitigated.length} icon={ShieldCheck} variant="success" testId="stat-mitigated" />
       </div>
 
-      {/* Risk Heatmap */}
+      {/* Risk Analysis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Severity Distribution */}
+        {/* Severity Heatmap */}
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-4">
@@ -193,29 +144,20 @@ export default function RiskFlags() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {severityCounts.map(({ label, open: openCount, mitigated: mitigatedCount, resolved, total }) => {
-                const meta = severityMeta[label];
+                const meta = SEVERITY_META[label];
                 return (
-                  <div key={label} className={`rounded-xl border p-4 ${meta.bg} ${meta.border}`} data-testid={`heatmap-severity-${label.toLowerCase()}`}>
+                  <div key={label} className={`rounded-xl border p-4 ${meta.bg} ${meta.border} transition-transform hover:scale-[1.02]`} data-testid={`heatmap-severity-${label.toLowerCase()}`}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-1.5">
-                        <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
-                        <span className={`text-xs font-semibold ${meta.text}`}>{label}</span>
+                        <span className={`h-2.5 w-2.5 rounded-full ${meta.dot}`} />
+                        <span className={`text-xs font-bold ${meta.text}`}>{label}</span>
                       </div>
-                      <span className={`text-2xl font-bold ${meta.text}`}>{total}</span>
+                      <span className={`text-2xl font-black ${meta.text}`}>{total}</span>
                     </div>
                     <div className="space-y-1 text-[10px] text-muted-foreground">
-                      <div className="flex justify-between">
-                        <span>Open</span>
-                        <span className="font-medium">{openCount}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Mitigated</span>
-                        <span className="font-medium">{mitigatedCount}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Resolved</span>
-                        <span className="font-medium">{resolved}</span>
-                      </div>
+                      <div className="flex justify-between"><span>Open</span><span className="font-semibold">{openCount}</span></div>
+                      <div className="flex justify-between"><span>Mitigated</span><span className="font-semibold">{mitigatedCount}</span></div>
+                      <div className="flex justify-between"><span>Resolved</span><span className="font-semibold">{resolved}</span></div>
                     </div>
                   </div>
                 );
@@ -224,7 +166,7 @@ export default function RiskFlags() {
           </CardContent>
         </Card>
 
-        {/* Category Breakdown */}
+        {/* Category breakdown */}
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-4">
@@ -234,21 +176,19 @@ export default function RiskFlags() {
             {categoryBreakdown.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">No risk flags recorded</p>
             ) : (
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {categoryBreakdown.map(({ category, count, open: openCount }) => (
                   <div key={category} className="space-y-1" data-testid={`heatmap-category-${category.toLowerCase()}`}>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-medium">{category}</span>
+                      <span className="font-semibold">{category}</span>
                       <div className="flex items-center gap-2">
-                        {openCount > 0 && (
-                          <span className="text-destructive font-medium">{openCount} open</span>
-                        )}
+                        {openCount > 0 && <span className="font-bold text-destructive">{openCount} open</span>}
                         <span className="text-muted-foreground">{count} total</span>
                       </div>
                     </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div className="h-2.5 rounded-full bg-muted overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500"
+                        className={`h-full rounded-full transition-all duration-700 ${openCount > 0 ? "bg-gradient-to-r from-destructive/80 to-chart-3/60" : "bg-gradient-to-r from-primary to-primary/60"}`}
                         style={{ width: `${(count / maxCategoryCount) * 100}%` }}
                       />
                     </div>
@@ -260,34 +200,29 @@ export default function RiskFlags() {
         </Card>
       </div>
 
+      {/* Risk Flag List */}
       <div className="space-y-3">
-        {riskFlags?.map((flag) => {
+        {sortedFlags.map((flag) => {
           const project = projects?.find(p => p.id === flag.projectId);
           const asset = project ? assets?.find(a => a.id === project.assetId) : undefined;
+          const meta = SEVERITY_META[flag.severity] || SEVERITY_META.Low;
 
           return (
-            <Card key={flag.id} className="hover-elevate" data-testid={`card-risk-${flag.id}`}>
+            <Card key={flag.id} className={`group transition-all duration-200 hover:shadow-md overflow-hidden ${meta.leftBorder} ${meta.rowBg}`} data-testid={`card-risk-${flag.id}`}>
               <CardContent className="p-5">
                 <div className="flex items-start gap-4">
-                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${
-                    flag.severity === "High" || flag.severity === "Critical"
-                      ? "bg-destructive/10"
-                      : flag.severity === "Medium"
-                      ? "bg-chart-3/10"
-                      : "bg-chart-2/10"
-                  }`}>
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${meta.bg}`}>
                     <AlertTriangle className={`h-4 w-4 ${getRiskColor(flag.severity)}`} />
                   </div>
                   <div className="flex-1 min-w-0 space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                        <span className="text-sm font-semibold">{flag.category}</span>
-                        <Badge variant="secondary" className={getStatusColor(flag.severity)}>
+                        <span className="text-sm font-bold">{flag.category}</span>
+                        <Badge variant="secondary" className={`text-[10px] ${meta.bg} ${meta.text} border ${meta.border}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${meta.dot} mr-1 inline-block`} />
                           {flag.severity}
                         </Badge>
-                        <Badge variant="secondary" className={getStatusColor(flag.status)}>
-                          {flag.status}
-                        </Badge>
+                        <Badge variant="secondary" className={`text-[10px] ${getStatusColor(flag.status)}`}>{flag.status}</Badge>
                       </div>
                       {user && (
                         <div className="flex items-center gap-1 shrink-0">
@@ -297,16 +232,16 @@ export default function RiskFlags() {
                             </Button>
                           )}
                           {flag.status === "Mitigated" && (
-                            <Button size="sm" variant="outline" className="h-6 text-[10px] px-2" onClick={() => quickStatus(flag, "Resolved")} data-testid={`button-resolve-${flag.id}`}>
+                            <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 text-chart-2 border-chart-2/30 hover:bg-chart-2/10" onClick={() => quickStatus(flag, "Resolved")} data-testid={`button-resolve-${flag.id}`}>
                               Resolve
                             </Button>
                           )}
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(flag)} aria-label="Edit risk flag" data-testid={`button-edit-risk-${flag.id}`}>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => openEdit(flag)} aria-label="Edit risk flag" data-testid={`button-edit-risk-${flag.id}`}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Delete risk flag" data-testid={`button-delete-risk-${flag.id}`}>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Delete risk flag" data-testid={`button-delete-risk-${flag.id}`}>
                                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
                               </Button>
                             </AlertDialogTrigger>
@@ -324,9 +259,11 @@ export default function RiskFlags() {
                         </div>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">{flag.description}</p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                      <span>{asset?.name || "Unknown"} — {project?.phase}</span>
+                    <p className="text-sm text-foreground/80 leading-relaxed">{flag.description}</p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap pt-0.5">
+                      <span className="font-medium">{asset?.name || "Unknown Asset"}</span>
+                      {project?.phase && <><span>·</span><span>{project.phase}</span></>}
+                      <span>·</span>
                       <span>{formatDate(flag.createdAt)}</span>
                     </div>
                   </div>
@@ -339,19 +276,14 @@ export default function RiskFlags() {
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) closeDialog(); else setOpen(true); }}>
         <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editing ? "Edit Risk Flag" : "New Risk Flag"}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? "Edit Risk Flag" : "New Risk Flag"}</DialogTitle></DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label>Project</Label>
               <Select value={form.projectId} onValueChange={(v) => setField("projectId", v)}>
                 <SelectTrigger data-testid="select-risk-project"><SelectValue placeholder="Select project" /></SelectTrigger>
                 <SelectContent>
-                  {projects?.map(p => {
-                    const a = assets?.find(a => a.id === p.assetId);
-                    return <SelectItem key={p.id} value={p.id}>{a?.name || p.phase}</SelectItem>;
-                  })}
+                  {projects?.map(p => { const a = assets?.find(a => a.id === p.assetId); return <SelectItem key={p.id} value={p.id}>{a?.name || p.phase}</SelectItem>; })}
                 </SelectContent>
               </Select>
             </div>
@@ -360,9 +292,7 @@ export default function RiskFlags() {
                 <Label>Category</Label>
                 <Select value={form.category} onValueChange={(v) => setField("category", v)}>
                   <SelectTrigger data-testid="select-risk-category"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {RISK_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
+                  <SelectContent>{RISK_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">

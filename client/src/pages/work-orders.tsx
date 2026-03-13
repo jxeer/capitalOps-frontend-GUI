@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ClipboardList, DollarSign, AlertCircle, CheckCircle2, Plus, Trash2, Pencil } from "lucide-react";
+import { ClipboardList, DollarSign, AlertCircle, CheckCircle2, Plus, Trash2, Pencil, Zap, ArrowUpCircle, MinusCircle, Building2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import type { WorkOrder, Vendor, Asset } from "@shared/schema";
 
-const emptyForm = {
-  vendorId: "", assetId: "", type: "", priority: "Medium",
-  cost: "", capExFlag: false, status: "Open", description: "", completionDate: "",
+const emptyForm = { vendorId: "", assetId: "", type: "", priority: "Medium", cost: "", capExFlag: false, status: "Open", description: "", completionDate: "" };
+
+const PRIORITY_META: Record<string, { border: string; iconBg: string; icon: typeof Zap; iconColor: string; badge: string }> = {
+  Urgent: { border: "border-l-4 border-l-destructive", iconBg: "bg-destructive/15", icon: Zap, iconColor: "text-destructive", badge: "bg-destructive/15 text-destructive" },
+  High:   { border: "border-l-4 border-l-chart-5",    iconBg: "bg-chart-5/15",    icon: ArrowUpCircle, iconColor: "text-chart-5", badge: "bg-chart-5/15 text-chart-5" },
+  Medium: { border: "border-l-4 border-l-chart-3",    iconBg: "bg-chart-3/15",    icon: MinusCircle,   iconColor: "text-chart-3", badge: "bg-chart-3/15 text-chart-3" },
+  Low:    { border: "border-l-4 border-l-muted-foreground/30", iconBg: "bg-muted", icon: MinusCircle, iconColor: "text-muted-foreground", badge: "bg-muted text-muted-foreground" },
 };
 
 export default function WorkOrders() {
@@ -37,91 +41,43 @@ export default function WorkOrders() {
   const [form, setForm] = useState(emptyForm);
 
   const setField = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
-
   const openCreate = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
   const openEdit = (wo: WorkOrder) => {
     setEditing(wo);
-    setForm({
-      vendorId: wo.vendorId,
-      assetId: wo.assetId,
-      type: wo.type,
-      priority: wo.priority,
-      cost: String(wo.cost),
-      capExFlag: wo.capExFlag,
-      status: wo.status,
-      description: wo.description || "",
-      completionDate: wo.completionDate || "",
-    });
+    setForm({ vendorId: wo.vendorId, assetId: wo.assetId, type: wo.type, priority: wo.priority, cost: String(wo.cost), capExFlag: wo.capExFlag, status: wo.status, description: wo.description || "", completionDate: wo.completionDate || "" });
     setOpen(true);
   };
   const closeDialog = () => { setOpen(false); setEditing(null); setForm(emptyForm); };
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/work-orders", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      toast({ title: "Work order created" });
-      closeDialog();
-    },
-    onError: (err: Error) => {
-      toast({ title: "Failed to create work order", description: err.message, variant: "destructive" });
-    },
+    mutationFn: async (data: any) => { const res = await apiRequest("POST", "/api/work-orders", data); return res.json(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Work order created" }); closeDialog(); },
+    onError: (err: Error) => { toast({ title: "Failed to create work order", description: err.message, variant: "destructive" }); },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const res = await apiRequest("PUT", `/api/work-orders/${id}`, data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      toast({ title: "Work order updated" });
-      closeDialog();
-    },
-    onError: (err: Error) => {
-      toast({ title: "Failed to update work order", description: err.message, variant: "destructive" });
-    },
+    mutationFn: async ({ id, data }: { id: string; data: any }) => { const res = await apiRequest("PUT", `/api/work-orders/${id}`, data); return res.json(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Work order updated" }); closeDialog(); },
+    onError: (err: Error) => { toast({ title: "Failed to update", description: err.message, variant: "destructive" }); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/work-orders/${id}`); },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      toast({ title: "Work order deleted" });
-    },
-    onError: (err: Error) => {
-      toast({ title: "Failed to delete", description: err.message, variant: "destructive" });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Work order deleted" }); },
+    onError: (err: Error) => { toast({ title: "Failed to delete", description: err.message, variant: "destructive" }); },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = {
-      ...form,
-      cost: Number(form.cost) || 0,
-      completionDate: form.completionDate || undefined,
-      description: form.description || undefined,
-    };
-    if (editing) {
-      updateMutation.mutate({ id: editing.id, data: payload });
-    } else {
-      createMutation.mutate(payload);
-    }
+    const payload = { ...form, cost: Number(form.cost) || 0, completionDate: form.completionDate || undefined, description: form.description || undefined };
+    if (editing) { updateMutation.mutate({ id: editing.id, data: payload }); } else { createMutation.mutate(payload); }
   };
 
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
         <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}
-        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}</div>
       </div>
     );
   }
@@ -131,12 +87,80 @@ export default function WorkOrders() {
   const capExCount = workOrders?.filter(w => w.capExFlag).length || 0;
   const completedCount = workOrders?.filter(w => w.status === "Completed").length || 0;
 
+  // Group by status sections
+  const urgentAndHigh = workOrders?.filter(w => (w.priority === "Urgent" || w.priority === "High") && w.status !== "Completed" && w.status !== "Cancelled") || [];
+  const otherActive = workOrders?.filter(w => w.priority !== "Urgent" && w.priority !== "High" && w.status !== "Completed" && w.status !== "Cancelled") || [];
+  const done = workOrders?.filter(w => w.status === "Completed" || w.status === "Cancelled") || [];
+
+  const WorkOrderRow = ({ wo }: { wo: WorkOrder }) => {
+    const vendor = vendors?.find(v => v.id === wo.vendorId);
+    const asset = assets?.find(a => a.id === wo.assetId);
+    const meta = PRIORITY_META[wo.priority] || PRIORITY_META.Low;
+    const PriorityIcon = meta.icon;
+
+    return (
+      <div key={wo.id} className={`group/wo p-4 rounded-xl bg-card border border-border/50 hover:shadow-md transition-all duration-200 ${meta.border}`} data-testid={`work-order-row-${wo.id}`}>
+        <div className="flex items-start gap-3">
+          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${meta.iconBg}`}>
+            <PriorityIcon className={`h-4 w-4 ${meta.iconColor}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">{wo.type}</p>
+                <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground flex-wrap">
+                  <span className="flex items-center gap-1">
+                    <Building2 className="h-3 w-3" />{asset?.name || "No asset"}
+                  </span>
+                  {vendor && <span>· {vendor.name}</span>}
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                <Badge variant="secondary" className={`text-[10px] ${meta.badge}`}>{wo.priority}</Badge>
+                <Badge variant="secondary" className={`text-[10px] ${getStatusColor(wo.status)}`}>{wo.status}</Badge>
+                {user && (
+                  <>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 opacity-0 group-hover/wo:opacity-100 transition-opacity" onClick={() => openEdit(wo)} aria-label="Edit work order" data-testid={`button-edit-wo-${wo.id}`}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 opacity-0 group-hover/wo:opacity-100 transition-opacity" data-testid={`button-delete-wo-${wo.id}`} aria-label="Delete work order">
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this work order?</AlertDialogTitle>
+                          <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteMutation.mutate(wo.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {wo.description && <p className="text-xs text-muted-foreground mt-1.5">{wo.description}</p>}
+
+            <div className="flex items-center gap-3 mt-2 text-xs flex-wrap">
+              <span className="font-semibold text-foreground">{formatCurrency(wo.cost)}</span>
+              {wo.capExFlag && <Badge variant="secondary" className="bg-chart-4/15 text-chart-4 text-[10px]">CapEx</Badge>}
+              {wo.completionDate && <span className="text-muted-foreground">Done: {formatDate(wo.completionDate)}</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="p-6 space-y-6">
-      <PageHeader
-        title="Work Orders"
-        description="Work order management and cost tracking"
-      >
+      <PageHeader title="Work Orders" description="Work order management and cost tracking">
         {user && (
           <Button size="sm" onClick={openCreate} data-testid="button-new-wo">
             <Plus className="h-4 w-4 mr-1" /> New Work Order
@@ -151,97 +175,59 @@ export default function WorkOrders() {
         <StatCard title="Completed" value={completedCount} icon={CheckCircle2} variant="success" testId="stat-completed" />
       </div>
 
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-sm font-semibold">All Work Orders</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="space-y-6">
+        {urgentAndHigh.length > 0 && (
           <div className="space-y-3">
-            {workOrders?.map((wo) => {
-              const vendor = vendors?.find(v => v.id === wo.vendorId);
-              const asset = assets?.find(a => a.id === wo.assetId);
-
-              const priorityBorder = wo.priority === "Urgent" ? "border-l-4 border-l-destructive" :
-                wo.priority === "High" ? "border-l-4 border-l-chart-5" :
-                wo.priority === "Medium" ? "border-l-4 border-l-chart-3" :
-                "border-l-4 border-l-muted-foreground/30";
-              return (
-                <div key={wo.id} className={`p-4 rounded-md bg-accent/30 space-y-3 ${priorityBorder}`} data-testid={`work-order-row-${wo.id}`}>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${
-                        wo.priority === "Urgent" ? "bg-destructive/15" :
-                        wo.priority === "High" ? "bg-chart-5/15" :
-                        "bg-primary/10"
-                      }`}>
-                        <ClipboardList className={`h-4 w-4 ${
-                          wo.priority === "Urgent" ? "text-destructive" :
-                          wo.priority === "High" ? "text-chart-5" :
-                          "text-primary"
-                        }`} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{wo.type}</p>
-                        <p className="text-xs text-muted-foreground">{vendor?.name || "Unknown"} | {asset?.name || "Unknown"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                      <Badge variant="secondary" className={getStatusColor(wo.priority)}>{wo.priority}</Badge>
-                      <Badge variant="secondary" className={getStatusColor(wo.status)}>{wo.status}</Badge>
-                      {user && (
-                        <>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(wo)} aria-label="Edit work order" data-testid={`button-edit-wo-${wo.id}`}>
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button size="icon" variant="ghost" className="h-7 w-7" data-testid={`button-delete-wo-${wo.id}`} aria-label="Delete work order">
-                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete this work order?</AlertDialogTitle>
-                                <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteMutation.mutate(wo.id)}>Delete</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {wo.description && (
-                    <p className="text-xs text-muted-foreground">{wo.description}</p>
-                  )}
-
-                  <div className="flex items-center justify-between gap-3 text-xs flex-wrap">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="font-semibold">{formatCurrency(wo.cost)}</span>
-                      {wo.capExFlag && (
-                        <Badge variant="secondary" className="bg-chart-4/15 text-chart-4 text-[10px]">CapEx</Badge>
-                      )}
-                    </div>
-                    {wo.completionDate && (
-                      <span className="text-muted-foreground">Completed: {formatDate(wo.completionDate)}</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-destructive" />
+              <h3 className="text-sm font-semibold">Urgent & High Priority</h3>
+              <Badge variant="secondary" className="bg-destructive/10 text-destructive text-[10px]">{urgentAndHigh.length}</Badge>
+            </div>
+            <div className="space-y-2">
+              {urgentAndHigh.map(wo => <WorkOrderRow key={wo.id} wo={wo} />)}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        )}
+
+        {otherActive.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold">Active Orders</h3>
+              <Badge variant="secondary" className="bg-primary/10 text-primary text-[10px]">{otherActive.length}</Badge>
+            </div>
+            <div className="space-y-2">
+              {otherActive.map(wo => <WorkOrderRow key={wo.id} wo={wo} />)}
+            </div>
+          </div>
+        )}
+
+        {done.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-chart-2" />
+              <h3 className="text-sm font-semibold text-muted-foreground">Completed / Cancelled</h3>
+              <Badge variant="secondary" className="text-[10px]">{done.length}</Badge>
+            </div>
+            <div className="space-y-2 opacity-70">
+              {done.map(wo => <WorkOrderRow key={wo.id} wo={wo} />)}
+            </div>
+          </div>
+        )}
+
+        {!workOrders?.length && (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <ClipboardList className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">No work orders found</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) closeDialog(); else setOpen(true); }}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editing ? "Edit Work Order" : "Create Work Order"}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? "Edit Work Order" : "Create Work Order"}</DialogTitle></DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label>Type</Label>
@@ -252,22 +238,14 @@ export default function WorkOrders() {
                 <Label>Vendor</Label>
                 <Select value={form.vendorId} onValueChange={(v) => setField("vendorId", v)}>
                   <SelectTrigger data-testid="select-wo-vendor"><SelectValue placeholder="Select vendor" /></SelectTrigger>
-                  <SelectContent>
-                    {vendors?.map(v => (
-                      <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectContent>{vendors?.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Asset</Label>
                 <Select value={form.assetId} onValueChange={(v) => setField("assetId", v)}>
                   <SelectTrigger data-testid="select-wo-asset"><SelectValue placeholder="Select asset" /></SelectTrigger>
-                  <SelectContent>
-                    {assets?.map(a => (
-                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectContent>{assets?.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
