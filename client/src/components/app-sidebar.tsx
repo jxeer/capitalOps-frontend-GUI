@@ -10,6 +10,7 @@ import {
   ClipboardList,
   AlertTriangle,
   TrendingUp,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
@@ -29,6 +30,7 @@ const capitalEngineItems = [
   { title: "Deals", url: "/deals", icon: Handshake },
   { title: "Investors", url: "/investors", icon: Users },
   { title: "Allocations", url: "/allocations", icon: TrendingUp },
+  { title: "Investor Portal", url: "/investor-portal", icon: BarChart3 },
 ];
 
 const executionItems = [

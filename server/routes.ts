@@ -85,6 +85,16 @@ export async function registerRoutes(
 ): Promise<Server> {
   setupAuth(app);
 
+  // Seed a default admin user if none exists
+  (async () => {
+    const existing = await storage.getUserByUsername("admin");
+    if (!existing) {
+      const hashed = await hashPassword("admin123");
+      await storage.createUser({ username: "admin", password: hashed, role: "admin" });
+      log("Default admin user created (admin/admin123)");
+    }
+  })();
+
   app.post("/api/register", async (req, res, next) => {
     try {
       const { username, password } = req.body;

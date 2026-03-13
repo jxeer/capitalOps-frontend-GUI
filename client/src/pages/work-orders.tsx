@@ -145,10 +145,10 @@ export default function WorkOrders() {
       </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Open Orders" value={openOrders.length} icon={ClipboardList} testId="stat-open-orders" />
+        <StatCard title="Open Orders" value={openOrders.length} icon={ClipboardList} variant="warning" testId="stat-open-orders" />
         <StatCard title="Total Cost" value={formatCurrency(totalCost)} icon={DollarSign} testId="stat-total-cost" />
-        <StatCard title="CapEx Items" value={capExCount} icon={AlertCircle} testId="stat-capex" />
-        <StatCard title="Completed" value={completedCount} icon={CheckCircle2} testId="stat-completed" />
+        <StatCard title="CapEx Items" value={capExCount} icon={AlertCircle} variant="danger" testId="stat-capex" />
+        <StatCard title="Completed" value={completedCount} icon={CheckCircle2} variant="success" testId="stat-completed" />
       </div>
 
       <Card>
@@ -161,12 +161,24 @@ export default function WorkOrders() {
               const vendor = vendors?.find(v => v.id === wo.vendorId);
               const asset = assets?.find(a => a.id === wo.assetId);
 
+              const priorityBorder = wo.priority === "Urgent" ? "border-l-4 border-l-destructive" :
+                wo.priority === "High" ? "border-l-4 border-l-chart-5" :
+                wo.priority === "Medium" ? "border-l-4 border-l-chart-3" :
+                "border-l-4 border-l-muted-foreground/30";
               return (
-                <div key={wo.id} className="p-4 rounded-md bg-accent/30 space-y-3" data-testid={`work-order-row-${wo.id}`}>
+                <div key={wo.id} className={`p-4 rounded-md bg-accent/30 space-y-3 ${priorityBorder}`} data-testid={`work-order-row-${wo.id}`}>
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                        <ClipboardList className="h-4 w-4 text-primary" />
+                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${
+                        wo.priority === "Urgent" ? "bg-destructive/15" :
+                        wo.priority === "High" ? "bg-chart-5/15" :
+                        "bg-primary/10"
+                      }`}>
+                        <ClipboardList className={`h-4 w-4 ${
+                          wo.priority === "Urgent" ? "text-destructive" :
+                          wo.priority === "High" ? "text-chart-5" :
+                          "text-primary"
+                        }`} />
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{wo.type}</p>

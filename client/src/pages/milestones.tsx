@@ -168,9 +168,9 @@ export default function Milestones() {
       </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard title="Completed" value={completed} icon={CheckCircle2} testId="stat-completed-milestones" />
-        <StatCard title="Delayed" value={delayed} icon={AlertTriangle} testId="stat-delayed-milestones" />
-        <StatCard title="Risk Flagged" value={flagged} icon={AlertTriangle} testId="stat-flagged-milestones" />
+        <StatCard title="Completed" value={completed} icon={CheckCircle2} variant="success" testId="stat-completed-milestones" />
+        <StatCard title="Delayed" value={delayed} icon={AlertTriangle} variant="danger" testId="stat-delayed-milestones" />
+        <StatCard title="Risk Flagged" value={flagged} icon={AlertTriangle} variant="warning" testId="stat-flagged-milestones" />
       </div>
 
       <div className="flex items-center gap-4 flex-wrap">

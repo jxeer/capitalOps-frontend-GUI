@@ -152,8 +152,8 @@ export default function Projects() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard title="Total Projects" value={projects?.length || 0} icon={FolderKanban} testId="stat-total-projects" />
-        <StatCard title="Active" value={activeProjects} icon={FolderKanban} testId="stat-active-projects" />
-        <StatCard title="Total Budget" value={formatCurrency(totalBudget)} icon={FolderKanban} testId="stat-total-budget" />
+        <StatCard title="Active" value={activeProjects} icon={FolderKanban} variant="success" testId="stat-active-projects" />
+        <StatCard title="Total Budget" value={formatCurrency(totalBudget)} icon={FolderKanban} variant="highlight" testId="stat-total-budget" />
       </div>
 
       <div className="space-y-4">

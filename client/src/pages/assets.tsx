@@ -129,6 +129,7 @@ export default function Assets() {
 
   const active = assets?.filter(a => a.status === "Active").length || 0;
   const stabilized = assets?.filter(a => a.status === "Stabilized").length || 0;
+  const totalSqFt = assets?.reduce((sum, a) => sum + a.squareFootage, 0) || 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -143,10 +144,11 @@ export default function Assets() {
         )}
       </PageHeader>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Assets" value={assets?.length || 0} icon={Building2} testId="stat-total-assets" />
-        <StatCard title="Active" value={active} icon={Building2} testId="stat-active-assets" />
-        <StatCard title="Stabilized" value={stabilized} icon={Building2} testId="stat-stabilized-assets" />
+        <StatCard title="Active" value={active} icon={Building2} variant="success" testId="stat-active-assets" />
+        <StatCard title="Stabilized" value={stabilized} icon={Building2} variant="highlight" testId="stat-stabilized-assets" />
+        <StatCard title="Total Sq Ft" value={`${formatNumber(totalSqFt)} SF`} icon={Maximize2} testId="stat-total-sqft" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

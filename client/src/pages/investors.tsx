@@ -139,6 +139,7 @@ export default function Investors() {
 
   const activeInvestors = investors?.filter(i => i.status === "Active").length || 0;
   const tier2Investors = investors?.filter(i => i.tierLevel === "Tier 2").length || 0;
+  const totalCommittedAll = allocations?.reduce((sum, a) => sum + a.hardCommitAmount, 0) || 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -153,10 +154,11 @@ export default function Investors() {
         )}
       </PageHeader>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Investors" value={investors?.length || 0} icon={Users} testId="stat-total-investors" />
-        <StatCard title="Active" value={activeInvestors} icon={Shield} testId="stat-active-investors" />
-        <StatCard title="Priority (Tier 2)" value={tier2Investors} icon={Star} testId="stat-tier2" />
+        <StatCard title="Active" value={activeInvestors} icon={Shield} variant="success" testId="stat-active-investors" />
+        <StatCard title="Priority (Tier 2)" value={tier2Investors} icon={Star} variant="warning" testId="stat-tier2" />
+        <StatCard title="Total Committed" value={formatCurrency(totalCommittedAll)} icon={Users} variant="highlight" testId="stat-total-committed" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -165,12 +167,14 @@ export default function Investors() {
           const totalCommitted = investorAllocations.reduce((sum, a) => sum + a.hardCommitAmount, 0);
 
           return (
-            <Card key={investor.id} className="hover-elevate" data-testid={`card-investor-${investor.id}`}>
+            <Card key={investor.id} className="hover-elevate overflow-hidden" data-testid={`card-investor-${investor.id}`}>
+              {/* Tier accent bar */}
+              <div className={`h-1 w-full ${investor.tierLevel === "Tier 2" ? "bg-gradient-to-r from-chart-4 to-amber-400" : "bg-gradient-to-r from-primary to-blue-400"}`} />
               <CardContent className="p-5 space-y-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                      <Users className="h-5 w-5 text-primary" />
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${investor.tierLevel === "Tier 2" ? "bg-chart-4/15" : "bg-primary/10"}`}>
+                      <Users className={`h-5 w-5 ${investor.tierLevel === "Tier 2" ? "text-chart-4" : "text-primary"}`} />
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-sm font-semibold truncate" data-testid={`text-investor-name-${investor.id}`}>{investor.name}</h3>
@@ -178,8 +182,12 @@ export default function Investors() {
                         <Badge variant="secondary" className={getStatusColor(investor.status)}>
                           {investor.status}
                         </Badge>
-                        <Badge variant="secondary" className={investor.tierLevel === "Tier 2" ? "bg-chart-4/15 text-chart-4" : "bg-accent text-accent-foreground"}>
+                        <Badge variant="secondary" className={investor.tierLevel === "Tier 2" ? "bg-chart-4/15 text-chart-4" : "bg-primary/10 text-primary"}>
+                          <Star className="h-2.5 w-2.5 mr-0.5" />
                           {investor.tierLevel}
+                        </Badge>
+                        <Badge variant="secondary" className="bg-accent text-accent-foreground text-[9px]">
+                          {investor.accreditationStatus}
                         </Badge>
                       </div>
                     </div>

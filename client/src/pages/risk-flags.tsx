@@ -139,6 +139,30 @@ export default function RiskFlags() {
   const mitigated = riskFlags?.filter(r => r.status === "Mitigated") || [];
   const highSeverity = riskFlags?.filter(r => r.severity === "High" || r.severity === "Critical") || [];
 
+  const SEVERITIES = ["Low", "Medium", "High", "Critical"] as const;
+  const severityMeta: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+    Low:      { bg: "bg-chart-2/10",     text: "text-chart-2",     border: "border-chart-2/30",     dot: "bg-chart-2" },
+    Medium:   { bg: "bg-chart-3/10",     text: "text-chart-3",     border: "border-chart-3/30",     dot: "bg-chart-3" },
+    High:     { bg: "bg-destructive/10", text: "text-destructive", border: "border-destructive/30", dot: "bg-destructive" },
+    Critical: { bg: "bg-chart-5/15",     text: "text-chart-5",     border: "border-chart-5/40",     dot: "bg-chart-5" },
+  };
+
+  const severityCounts = SEVERITIES.map(sev => ({
+    label: sev,
+    open: riskFlags?.filter(r => r.severity === sev && r.status === "Open").length || 0,
+    mitigated: riskFlags?.filter(r => r.severity === sev && r.status === "Mitigated").length || 0,
+    resolved: riskFlags?.filter(r => r.severity === sev && r.status === "Resolved").length || 0,
+    total: riskFlags?.filter(r => r.severity === sev).length || 0,
+  }));
+
+  const categoryBreakdown = RISK_CATEGORIES.map(cat => ({
+    category: cat,
+    count: riskFlags?.filter(r => r.category === cat).length || 0,
+    open: riskFlags?.filter(r => r.category === cat && r.status === "Open").length || 0,
+  })).filter(c => c.count > 0).sort((a, b) => b.count - a.count);
+
+  const maxCategoryCount = Math.max(...categoryBreakdown.map(c => c.count), 1);
+
   return (
     <div className="p-6 space-y-6">
       <PageHeader
@@ -153,9 +177,87 @@ export default function RiskFlags() {
       </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard title="Open Risks" value={openFlags.length} icon={ShieldAlert} testId="stat-open-risks" />
-        <StatCard title="High/Critical" value={highSeverity.length} icon={AlertTriangle} testId="stat-high-risks" />
-        <StatCard title="Mitigated" value={mitigated.length} icon={ShieldCheck} testId="stat-mitigated" />
+        <StatCard title="Open Risks" value={openFlags.length} icon={ShieldAlert} variant="danger" testId="stat-open-risks" />
+        <StatCard title="High/Critical" value={highSeverity.length} icon={AlertTriangle} variant="warning" testId="stat-high-risks" />
+        <StatCard title="Mitigated" value={mitigated.length} icon={ShieldCheck} variant="success" testId="stat-mitigated" />
+      </div>
+
+      {/* Risk Heatmap */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Severity Distribution */}
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold">Severity Breakdown</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {severityCounts.map(({ label, open: openCount, mitigated: mitigatedCount, resolved, total }) => {
+                const meta = severityMeta[label];
+                return (
+                  <div key={label} className={`rounded-xl border p-4 ${meta.bg} ${meta.border}`} data-testid={`heatmap-severity-${label.toLowerCase()}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
+                        <span className={`text-xs font-semibold ${meta.text}`}>{label}</span>
+                      </div>
+                      <span className={`text-2xl font-bold ${meta.text}`}>{total}</span>
+                    </div>
+                    <div className="space-y-1 text-[10px] text-muted-foreground">
+                      <div className="flex justify-between">
+                        <span>Open</span>
+                        <span className="font-medium">{openCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Mitigated</span>
+                        <span className="font-medium">{mitigatedCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Resolved</span>
+                        <span className="font-medium">{resolved}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Category Breakdown */}
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold">Risks by Category</h3>
+            </div>
+            {categoryBreakdown.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No risk flags recorded</p>
+            ) : (
+              <div className="space-y-2.5">
+                {categoryBreakdown.map(({ category, count, open: openCount }) => (
+                  <div key={category} className="space-y-1" data-testid={`heatmap-category-${category.toLowerCase()}`}>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium">{category}</span>
+                      <div className="flex items-center gap-2">
+                        {openCount > 0 && (
+                          <span className="text-destructive font-medium">{openCount} open</span>
+                        )}
+                        <span className="text-muted-foreground">{count} total</span>
+                      </div>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500"
+                        style={{ width: `${(count / maxCategoryCount) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="space-y-3">

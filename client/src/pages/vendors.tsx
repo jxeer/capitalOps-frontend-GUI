@@ -124,8 +124,8 @@ export default function Vendors() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard title="Total Vendors" value={vendors?.length || 0} icon={Truck} testId="stat-total-vendors" />
-        <StatCard title="COI Current" value={currentCOI} icon={Shield} testId="stat-coi-current" />
-        <StatCard title="Avg Performance" value={`${avgScore}/100`} icon={Star} testId="stat-avg-score" />
+        <StatCard title="COI Current" value={currentCOI} icon={Shield} variant="success" testId="stat-coi-current" />
+        <StatCard title="Avg Performance" value={`${avgScore}/100`} icon={Star} variant={avgScore >= 85 ? "success" : avgScore >= 70 ? "warning" : "danger"} testId="stat-avg-score" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

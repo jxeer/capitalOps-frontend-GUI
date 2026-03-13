@@ -147,6 +147,13 @@ export default function Allocations() {
   const totalHard = allocations?.reduce((sum, a) => sum + a.hardCommitAmount, 0) || 0;
   const funded = allocations?.filter(a => a.status === "Funded").length || 0;
 
+  const pipelineStages = STATUS_FLOW.slice(0, -1).map(status => ({
+    status,
+    count: allocations?.filter(a => a.status === status).length || 0,
+    amount: allocations?.filter(a => a.status === status).reduce((sum, a) => sum + a.hardCommitAmount, 0) || 0,
+  }));
+  const maxPipelineCount = Math.max(...pipelineStages.map(s => s.count), 1);
+
   const getDealName = (dealId: string) => {
     const deal = deals?.find(d => d.id === dealId);
     if (!deal) return "Unknown Deal";
@@ -176,9 +183,38 @@ export default function Allocations() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard title="Total Soft Commits" value={formatCurrency(totalSoft)} icon={TrendingUp} testId="stat-soft-commits" />
-        <StatCard title="Total Hard Commits" value={formatCurrency(totalHard)} icon={DollarSign} testId="stat-hard-commits" />
-        <StatCard title="Funded Allocations" value={funded} icon={Users} testId="stat-funded" />
+        <StatCard title="Total Hard Commits" value={formatCurrency(totalHard)} icon={DollarSign} variant="success" testId="stat-hard-commits" />
+        <StatCard title="Funded Allocations" value={funded} icon={Users} variant="highlight" testId="stat-funded" />
       </div>
+
+      {/* Commitment Pipeline */}
+      <Card data-testid="allocation-pipeline">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            Commitment Pipeline
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+            {pipelineStages.map(({ status, count, amount }) => (
+              <div key={status} className="flex flex-col items-center text-center space-y-2" data-testid={`pipeline-stage-${status.toLowerCase().replace(/\s+/g, "-")}`}>
+                <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all duration-500"
+                    style={{ width: `${(count / maxPipelineCount) * 100}%` }}
+                  />
+                </div>
+                <span className="text-lg font-bold">{count}</span>
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-medium leading-tight">{status}</p>
+                  {amount > 0 && <p className="text-[9px] text-muted-foreground">{formatCurrency(amount)}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="pb-4">
