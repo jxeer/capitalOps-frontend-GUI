@@ -236,7 +236,7 @@ export default function Milestones() {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => deleteMutation.mutate(ms.id)}>Delete</AlertDialogAction>
+                                      <AlertDialogAction onClick={() => deleteMutation.mutate(ms.id)} data-testid="button-confirm-delete">Delete</AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>

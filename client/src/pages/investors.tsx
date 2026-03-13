@@ -162,7 +162,7 @@ export default function Investors() {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteMutation.mutate(investor.id)}>Delete</AlertDialogAction>
+                                <AlertDialogAction onClick={() => deleteMutation.mutate(investor.id)} data-testid="button-confirm-delete">Delete</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>

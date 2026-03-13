@@ -252,7 +252,7 @@ export default function RiskFlags() {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteMutation.mutate(flag.id)}>Delete</AlertDialogAction>
+                                <AlertDialogAction onClick={() => deleteMutation.mutate(flag.id)} data-testid="button-confirm-delete">Delete</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>

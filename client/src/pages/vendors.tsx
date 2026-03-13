@@ -177,7 +177,7 @@ export default function Vendors() {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteMutation.mutate(vendor.id)}>Delete</AlertDialogAction>
+                                <AlertDialogAction onClick={() => deleteMutation.mutate(vendor.id)} data-testid="button-confirm-delete">Delete</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>

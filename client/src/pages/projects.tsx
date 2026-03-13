@@ -160,7 +160,7 @@ export default function Projects() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteMutation.mutate(project.id)}>Delete</AlertDialogAction>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(project.id)} data-testid="button-confirm-delete">Delete</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>

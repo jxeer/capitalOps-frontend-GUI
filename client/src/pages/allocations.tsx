@@ -246,7 +246,7 @@ export default function Allocations() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteMutation.mutate(alloc.id)}>Delete</AlertDialogAction>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(alloc.id)} data-testid="button-confirm-delete">Delete</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
