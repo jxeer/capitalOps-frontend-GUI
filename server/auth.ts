@@ -7,6 +7,7 @@ import { promisify } from "util";
 import type { Express, RequestHandler } from "express";
 import { storage } from "./storage";
 import type { User } from "@shared/schema";
+import "dotenv/config";
 
 const scryptAsync = promisify(scrypt);
 
@@ -74,11 +75,7 @@ export function setupAuth(app: Express) {
   const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
   if (googleClientId && googleClientSecret) {
-    const replitDomains = process.env.REPLIT_DOMAINS || process.env.REPLIT_DEV_DOMAIN || "";
-    const primaryDomain = replitDomains.split(",")[0]?.trim();
-    const callbackURL = primaryDomain
-      ? `https://${primaryDomain}/api/auth/google/callback`
-      : "/api/auth/google/callback";
+    const callbackURL = process.env.GOOGLE_CALLBACK_URL || "/api/auth/google/callback";
 
     passport.use(
       new GoogleStrategy(
