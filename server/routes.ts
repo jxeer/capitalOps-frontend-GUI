@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { log } from "./index";
-import { setupAuth, requireAuth, hashPassword, comparePasswords } from "./auth";
+import { setupAuth, requireAuth, hashPassword, comparePasswords, setJwtCookie, clearJwtCookie, getUserFromRequest } from "./auth";
 import passport from "passport";
 
 const BACKEND_URL = process.env.BACKEND_URL || "";
@@ -117,10 +117,9 @@ export async function registerRoutes(
       const hashed = await hashPassword(password);
       const user = await storage.createUser({ username, password: hashed, role: "viewer" });
 
-      req.login({ id: user.id, username: user.username, role: user.role }, (err) => {
-        if (err) return next(err);
-        res.status(201).json({ id: user.id, username: user.username, role: user.role });
-      });
+      const userData = { id: user.id, username: user.username, role: user.role };
+      setJwtCookie(res, userData);
+      res.status(201).json(userData);
     } catch (err) {
       next(err);
     }
@@ -130,23 +129,20 @@ export async function registerRoutes(
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ message: info?.message || "Invalid credentials" });
-      req.login(user, (err) => {
-        if (err) return next(err);
-        res.json({ id: user.id, username: user.username, role: user.role });
-      });
+      const userData = { id: user.id, username: user.username, role: user.role };
+      setJwtCookie(res, userData);
+      res.json(userData);
     })(req, res, next);
   });
 
-  app.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
-      res.json({ message: "Logged out" });
-    });
+  app.post("/api/logout", (_req, res) => {
+    clearJwtCookie(res);
+    res.json({ message: "Logged out" });
   });
 
   app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
-    const user = req.user!;
+    const user = getUserFromRequest(req);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
     res.json({ id: user.id, username: user.username, role: user.role });
   });
 
@@ -163,9 +159,23 @@ export async function registerRoutes(
     if (!googleEnabled) {
       return res.redirect("/auth?error=google_failed");
     }
-    passport.authenticate("google", { failureRedirect: "/auth?error=google_failed" })(req, res, () => {
-      res.redirect("/");
-    });
+    const proto = req.headers["x-forwarded-proto"] || req.protocol;
+    const host = req.headers["x-forwarded-host"] || req.get("host");
+    const base = process.env.APP_URL || `${proto}://${host}`;
+
+    passport.authenticate("google", (err: any, user: any, info: any) => {
+      if (err) {
+        console.error("[auth] Google callback error:", err);
+        return res.redirect(`${base}/auth?error=google_failed`);
+      }
+      if (!user) {
+        console.warn("[auth] Google callback: no user returned, info:", info);
+        return res.redirect(`${base}/auth?error=google_failed`);
+      }
+      console.log("[auth] Google login success for user:", user.username);
+      setJwtCookie(res, { id: user.id, username: user.username, role: user.role });
+      res.redirect(`${base}/`);
+    })(req, res, next);
   });
 
   app.get("/api/auth/google/status", (_req, res) => {
