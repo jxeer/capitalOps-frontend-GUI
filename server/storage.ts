@@ -73,6 +73,9 @@ export interface IStorage {
     openWorkOrders: number;
     riskFlags: number;
   }>;
+  getUserByProfileType(profileType: string): Promise<User[]>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -106,7 +109,7 @@ export class MemStorage implements IStorage {
 
   async createUser(user: InsertUser): Promise<User> {
     const id = randomUUID();
-    const newUser: User = { ...user, id, role: user.role || "viewer" };
+    const newUser: User = { ...user, id, role: user.role || "viewer", profileStatus: user.profileStatus || "pending" };
     this.users.set(id, newUser);
     return newUser;
   }
@@ -461,6 +464,18 @@ export class MemStorage implements IStorage {
       openWorkOrders: workOrders.filter(w => w.status === "Open" || w.status === "In Progress").length,
       riskFlags: riskFlags.filter(r => r.status === "Open").length,
     };
+  }
+
+  async getUserByProfileType(profileType: string): Promise<User[]> {
+    return Array.from(this.users.values()).filter(u => u.profileType === profileType);
+  }
+
+  async updateUser(id: string, data: Partial<User>): Promise<User | undefined> {
+    const existing = this.users.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...data };
+    this.users.set(id, updated);
+    return updated;
   }
 }
 

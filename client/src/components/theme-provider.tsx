@@ -1,13 +1,15 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark";
+type Theme = "light" | "dark" | "dim";
 
 const ThemeContext = createContext<{
   theme: Theme;
   toggleTheme: () => void;
+  setTheme: (theme: Theme) => void;
 }>({
-  theme: "light",
+  theme: "dark",
   toggleTheme: () => {},
+  setTheme: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -22,16 +24,29 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
     if (theme === "dark") {
       root.classList.add("dark");
+      root.classList.remove("dim");
+    } else if (theme === "dim") {
+      root.classList.add("dim");
+      root.classList.remove("dark");
     } else {
       root.classList.remove("dark");
+      root.classList.remove("dim");
     }
     localStorage.setItem("capitalops-theme", theme);
   }, [theme]);
 
-  const toggleTheme = () => setTheme(t => (t === "dark" ? "light" : "dark"));
+  const toggleTheme = () => {
+    if (theme === "dark") {
+      setTheme("dim");
+    } else if (theme === "dim") {
+      setTheme("light");
+    } else {
+      setTheme("dark");
+    }
+  };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

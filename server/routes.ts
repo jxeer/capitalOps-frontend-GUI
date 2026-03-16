@@ -91,7 +91,7 @@ export async function registerRoutes(
     const existing = await storage.getUserByUsername("admin");
     if (!existing) {
       const hashed = await hashPassword("admin123");
-      await storage.createUser({ username: "admin", password: hashed, role: "admin" });
+      await storage.createUser({ username: "admin", password: hashed, role: "admin", profileStatus: "active" });
       log("Default admin user created (admin/admin123)");
     }
   })();
@@ -115,7 +115,7 @@ export async function registerRoutes(
       }
 
       const hashed = await hashPassword(password);
-      const user = await storage.createUser({ username, password: hashed, role: "viewer" });
+      const user = await storage.createUser({ username, password: hashed, role: "viewer", profileStatus: "active" });
 
       const userData = { id: user.id, username: user.username, role: user.role };
       setJwtCookie(res, userData);
@@ -140,10 +140,24 @@ export async function registerRoutes(
     res.json({ message: "Logged out" });
   });
 
-  app.get("/api/user", (req, res) => {
+  app.get("/api/user", requireAuth, async (req, res) => {
     const user = getUserFromRequest(req);
     if (!user) return res.status(401).json({ message: "Not authenticated" });
-    res.json({ id: user.id, username: user.username, role: user.role });
+    const fullUser = await storage.getUser(user.id);
+    if (!fullUser) return res.status(404).json({ message: "User not found" });
+    res.json({ id: fullUser.id, username: fullUser.username, role: fullUser.role, profileType: fullUser.profileType, profileStatus: fullUser.profileStatus, profileImage: fullUser.profileImage });
+  });
+
+  app.put("/api/users/:id", requireAuth, async (req, res) => {
+    const user = getUserFromRequest(req);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const updatedUser = await storage.updateUser(req.params["id"] as string, req.body);
+      if (!updatedUser) return res.status(404).json({ message: "User not found" });
+      res.json(updatedUser);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to update user" });
+    }
   });
 
   const googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);

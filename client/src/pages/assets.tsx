@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { MediaGallery } from "@/components/media-gallery";
+import { AssetLocationMap } from "@/components/asset-location-map";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { getStatusColor, formatNumber } from "@/lib/formatters";
@@ -46,16 +48,19 @@ export default function Assets() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Asset | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [location, setLocation] = useState<{ address: string; lat: number; lng: number } | undefined>(undefined);
+  const [mediaPreviews, setMediaPreviews] = useState<{ url: string; type: "image" | "video"; name: string }[]>([]);
 
   const setField = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
-
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
+  const openCreate = () => { setEditing(null); setForm(emptyForm); setLocation(undefined); setMediaPreviews([]); setOpen(true); };
   const openEdit = (asset: Asset) => {
     setEditing(asset);
     setForm({ name: asset.name, location: asset.location, assetType: asset.assetType, squareFootage: String(asset.squareFootage), status: asset.status, assetManager: asset.assetManager });
+    setLocation(asset.location ? { address: asset.location, lat: 0, lng: 0 } : undefined);
+    setMediaPreviews([]);
     setOpen(true);
   };
-  const closeDialog = () => { setOpen(false); setEditing(null); setForm(emptyForm); };
+  const closeDialog = () => { setOpen(false); setEditing(null); setForm(emptyForm); setLocation(undefined); setMediaPreviews([]); };
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => { const res = await apiRequest("POST", "/api/assets", data); return res.json(); },
@@ -77,8 +82,24 @@ export default function Assets() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = { ...form, portfolioId: "port-001", squareFootage: Number(form.squareFootage) || 0 };
+    const payload = { ...form, portfolioId: "port-001", squareFootage: Number(form.squareFootage) || 0, location: location || undefined };
     if (editing) { updateMutation.mutate({ id: editing.id, data: payload }); } else { createMutation.mutate(payload); }
+  };
+
+  const handleMediaUpload = async (files: FileList) => {
+    const newPreviews: { url: string; type: "image" | "video"; name: string }[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) continue;
+      const url = URL.createObjectURL(file);
+      const type = file.type.startsWith("image/") ? "image" : "video";
+      newPreviews.push({ url, type, name: file.name });
+    }
+    setMediaPreviews((prev) => [...prev, ...newPreviews]);
+  };
+
+  const handleRemoveMedia = (urlToRemove: string) => {
+    setMediaPreviews((prev) => prev.filter((p) => p.url !== urlToRemove));
   };
 
   if (isLoading) {
@@ -119,7 +140,6 @@ export default function Assets() {
           const AssetIcon = meta.icon;
           return (
             <Card key={asset.id} className="group hover:shadow-xl transition-all duration-300 hover:scale-[1.01] overflow-hidden" data-testid={`card-asset-${asset.id}`}>
-              {/* Gradient header */}
               <div className={`bg-gradient-to-r ${meta.gradient} px-5 pt-5 pb-4`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
@@ -144,7 +164,6 @@ export default function Assets() {
               </div>
 
               <CardContent className="p-5 pt-4 space-y-4">
-                {/* Stats grid */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="p-2.5 rounded-lg bg-accent/40 space-y-0.5 text-center">
                     <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Type</p>
@@ -163,7 +182,6 @@ export default function Assets() {
                   </div>
                 </div>
 
-                {/* Footer with manager and actions */}
                 <div className="flex items-center justify-between pt-1 border-t border-border/50">
                   <p className="text-xs text-muted-foreground">
                     Managed by <span className="text-foreground font-medium">{asset.assetManager}</span>
@@ -239,6 +257,14 @@ export default function Assets() {
                 <Label>Asset Manager</Label>
                 <Input value={form.assetManager} onChange={(e) => setField("assetManager", e.target.value)} placeholder="Manager name" data-testid="input-asset-manager" required />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Media Gallery</Label>
+              <MediaGallery initialMedia={mediaPreviews} onUpload={handleMediaUpload} onRemove={handleRemoveMedia} />
+            </div>
+            <div className="space-y-2">
+              <Label>Asset Location</Label>
+              <AssetLocationMap initialLocation={location} onChange={setLocation} />
             </div>
             <Button type="submit" className="w-full" disabled={createMutation.isPending || updateMutation.isPending} data-testid="button-submit-asset">
               {(createMutation.isPending || updateMutation.isPending) ? "Saving..." : editing ? "Save Changes" : "Create Asset"}

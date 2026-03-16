@@ -1,0 +1,26 @@
+import { todo_write } from "todo_system";
+
+const tasks = [
+  {
+    content: "Phase 2 - Visual Features (MVP)",
+    priority: "high",
+    status: "in_progress"
+  },
+  {
+    content: "AWS S3 integration for photo/video uploads",
+    priority: "high",
+    status: "completed"
+  },
+  {
+    content: "Google Maps integration for asset location tracking",
+    priority: "high",
+    status: "completed"
+  },
+  {
+    content: "Field reporting components within projects",
+    priority: "medium",
+    status: "pending"
+  }
+];
+
+todo_write(tasks);

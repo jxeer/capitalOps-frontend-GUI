@@ -10,6 +10,14 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, LogOut, User } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Assets from "@/pages/assets";
@@ -22,6 +30,7 @@ import RiskFlags from "@/pages/risk-flags";
 import Vendors from "@/pages/vendors";
 import WorkOrders from "@/pages/work-orders";
 import InvestorPortal from "@/pages/investor-portal";
+import Profile from "@/pages/profile";
 import AuthPage from "@/pages/auth-page";
 
 function ThemeToggle() {
@@ -38,23 +47,65 @@ function UserMenu() {
 
   if (!user) return null;
 
+  const avatarFallback = user.username.substring(0, 2).toUpperCase();
+
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-accent/50 text-xs" data-testid="text-user-info">
-        <User className="h-3 w-3" />
-        <span className="font-medium">{user.username}</span>
-        <span className="text-muted-foreground capitalize">({user.role})</span>
-      </div>
-      <Button
-        size="icon"
-        variant="ghost"
-        onClick={() => logout()}
-        data-testid="button-logout"
-        aria-label="Log out"
-      >
-        <LogOut className="h-4 w-4" />
-      </Button>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full overflow-hidden ring-1 ring-ring/20" aria-label="Open profile menu">
+          {user.profileImage ? (
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user.profileImage} alt={user.username} />
+              <AvatarFallback>{avatarFallback}</AvatarFallback>
+            </Avatar>
+          ) : (
+            <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
+              <AvatarFallback>{avatarFallback}</AvatarFallback>
+            </Avatar>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-72">
+        <div className="flex items-center gap-2 p-2 border-b">
+          {user.profileImage ? (
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={user.profileImage} alt={user.username} />
+              <AvatarFallback>{avatarFallback}</AvatarFallback>
+            </Avatar>
+          ) : (
+            <Avatar className="h-10 w-10 bg-primary text-primary-foreground">
+              <AvatarFallback>{avatarFallback}</AvatarFallback>
+            </Avatar>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate">{user.username}</p>
+            <p className="text-[10px] text-muted-foreground truncate capitalize">{user.role}</p>
+          </div>
+        </div>
+        <div className="p-3 space-y-2 border-b">
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Profile Type</Label>
+          <p className="text-sm font-medium capitalize">{user.profileType || "Investor"}</p>
+        </div>
+        <div className="p-3 space-y-2 border-b">
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Account Status</Label>
+          <Badge variant="secondary" className="capitalize">
+            {user.profileStatus || "pending"}
+          </Badge>
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <a href="/profile" className="flex items-center gap-2 cursor-pointer">
+            <User className="h-4 w-4" />
+            <span className="text-sm">View Profile</span>
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => logout()} className="text-destructive cursor-pointer">
+          <LogOut className="h-4 w-4" />
+          <span className="text-sm">Log out</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -72,6 +123,7 @@ function Router() {
       <Route path="/vendors" component={Vendors} />
       <Route path="/work-orders" component={WorkOrders} />
       <Route path="/investor-portal" component={InvestorPortal} />
+      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );

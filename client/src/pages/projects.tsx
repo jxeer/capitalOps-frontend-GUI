@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { MediaGallery } from "@/components/media-gallery";
+import { AssetLocationMap } from "@/components/asset-location-map";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { formatCurrency, formatDate, getStatusColor } from "@/lib/formatters";
@@ -21,6 +24,7 @@ import type { Project, Asset, Milestone } from "@shared/schema";
 const emptyForm = {
   assetId: "", phase: "", startDate: "", targetCompletion: "",
   budgetTotal: "", budgetActual: "0", status: "Planning", pmAssigned: "",
+  description: "",
 };
 
 function getStatusStrip(status: string) {
@@ -50,15 +54,19 @@ export default function Projects() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [location, setLocation] = useState<{ address: string; lat: number; lng: number } | undefined>(undefined);
+  const [mediaPreviews, setMediaPreviews] = useState<{ url: string; type: "image" | "video"; name: string }[]>([]);
 
   const setField = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
+  const openCreate = () => { setEditing(null); setForm(emptyForm); setLocation(undefined); setMediaPreviews([]); setOpen(true); };
   const openEdit = (project: Project) => {
     setEditing(project);
-    setForm({ assetId: project.assetId, phase: project.phase, startDate: project.startDate, targetCompletion: project.targetCompletion, budgetTotal: String(project.budgetTotal), budgetActual: String(project.budgetActual), status: project.status, pmAssigned: project.pmAssigned });
+    setForm({ assetId: project.assetId, phase: project.phase, startDate: project.startDate, targetCompletion: project.targetCompletion, budgetTotal: String(project.budgetTotal), budgetActual: String(project.budgetActual), status: project.status, pmAssigned: project.pmAssigned, description: project.description || "" });
+    setLocation(undefined);
+    setMediaPreviews([]);
     setOpen(true);
   };
-  const closeDialog = () => { setOpen(false); setEditing(null); setForm(emptyForm); };
+  const closeDialog = () => { setOpen(false); setEditing(null); setForm(emptyForm); setLocation(undefined); setMediaPreviews([]); };
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => { const res = await apiRequest("POST", "/api/projects", data); return res.json(); },
@@ -80,8 +88,24 @@ export default function Projects() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = { ...form, portfolioId: "port-001", budgetTotal: Number(form.budgetTotal) || 0, budgetActual: Number(form.budgetActual) || 0 };
+    const payload = { ...form, portfolioId: "port-001", budgetTotal: Number(form.budgetTotal) || 0, budgetActual: Number(form.budgetActual) || 0, location: location || undefined };
     if (editing) { updateMutation.mutate({ id: editing.id, data: payload }); } else { createMutation.mutate(payload); }
+  };
+
+  const handleMediaUpload = async (files: FileList) => {
+    const newPreviews: { url: string; type: "image" | "video"; name: string }[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) continue;
+      const url = URL.createObjectURL(file);
+      const type = file.type.startsWith("image/") ? "image" : "video";
+      newPreviews.push({ url, type, name: file.name });
+    }
+    setMediaPreviews((prev) => [...prev, ...newPreviews]);
+  };
+
+  const handleRemoveMedia = (urlToRemove: string) => {
+    setMediaPreviews((prev) => prev.filter((p) => p.url !== urlToRemove));
   };
 
   if (isLoading) {
@@ -125,7 +149,6 @@ export default function Projects() {
 
           return (
             <Card key={project.id} className="group hover:shadow-xl transition-all duration-300 overflow-hidden" data-testid={`card-project-${project.id}`}>
-              {/* Status gradient header */}
               <div className={`bg-gradient-to-r ${strip} p-5 pb-4`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
@@ -171,7 +194,13 @@ export default function Projects() {
               </div>
 
               <CardContent className="p-5 space-y-4">
-                {/* Key metrics row */}
+                {project.description && (
+                  <div className="p-3 bg-muted/30 rounded-lg text-sm">
+                    <p className="text-muted-foreground mb-1">Description</p>
+                    <p className="text-foreground">{project.description}</p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="p-2.5 rounded-lg bg-accent/40 space-y-0.5">
                     <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Spent</p>
@@ -204,7 +233,6 @@ export default function Projects() {
                   </div>
                 </div>
 
-                {/* Progress bars */}
                 <div className="space-y-3">
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
@@ -309,6 +337,18 @@ export default function Projects() {
                 <Label>PM Assigned</Label>
                 <Input value={form.pmAssigned} onChange={(e) => setField("pmAssigned", e.target.value)} placeholder="Name" data-testid="input-pm-assigned" required />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea value={form.description} onChange={(e) => setField("description", e.target.value)} placeholder="Project description..." rows={3} />
+            </div>
+            <div className="space-y-2">
+              <Label>Media Gallery</Label>
+              <MediaGallery initialMedia={mediaPreviews} onUpload={handleMediaUpload} onRemove={handleRemoveMedia} />
+            </div>
+            <div className="space-y-2">
+              <Label>Asset Location</Label>
+              <AssetLocationMap initialLocation={location} onChange={setLocation} />
             </div>
             <Button type="submit" className="w-full" disabled={createMutation.isPending || updateMutation.isPending} data-testid="button-submit-project">
               {(createMutation.isPending || updateMutation.isPending) ? "Saving..." : editing ? "Save Changes" : "Create Project"}

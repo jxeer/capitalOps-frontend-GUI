@@ -8,6 +8,10 @@ type AuthUser = {
   id: string;
   username: string;
   role: string;
+  profileType?: string;
+  profileStatus?: string;
+  profileImage?: string;
+  email?: string;
 };
 
 type AuthContextType = {

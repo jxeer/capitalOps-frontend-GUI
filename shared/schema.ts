@@ -32,6 +32,7 @@ export const projectSchema = z.object({
   budgetActual: z.number(),
   status: z.enum(["Planning", "In Progress", "On Track", "At Risk", "On Hold", "Complete", "Completed"]),
   pmAssigned: z.string(),
+  description: z.string().optional(),
 });
 export type Project = z.infer<typeof projectSchema>;
 export const insertProjectSchema = projectSchema.omit({ id: true });
