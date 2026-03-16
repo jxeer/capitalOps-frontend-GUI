@@ -287,69 +287,41 @@ Your backend needs to provide a POST /upload endpoint that accepts multipart/for
 - `server/storage.ts` - In-memory storage with seed data
 - `shared/schema.ts` - Zod schemas and TypeScript types
 - `PLAN.md` - This file - implementation plan & status
+- `ARCHITECTURE.md` - System architecture and API documentation (separate file)
 
 **API Pattern:**
 - All routes first try to proxy to BACKEND_URL
 - Falls back to in-memory storage if unavailable
 - POST/PUT/DELETE require auth; GET routes work without
 
+**Build System:**
+- Vite for client-side development and bundling
+- Express.js for API routes and server-side rendering
+- Production build creates `dist/public/` (client) and `dist/index.cjs` (server)
+
 ---
 
 ## Notes for Future Context
 
-- Always check IMPLEMENTATION.md for detailed implementation documentation
+- Always check ARCHITECTURE.md for detailed architecture documentation
 - Schema types are in shared/schema.ts
 - Storage methods are in server/storage.ts
 - Routes are in server/routes.ts
 - Frontend components use Path aliases: @/, @shared/
 - Build system: Vite for client, Express for server (serverless compatible)
-## Phase 4 Backend Requirements 🔄 IN PROGRESS
-
-**Status:** In Progress  
-**Backend Directory:** `/Users/julianxeer/Downloads/capitalOps-backend-API-main`
-
-### What Frontend Needs from Backend:
-
-**Priority 1 - Phase 4 (Profile Enhancement):**
-
-1. **User Model Extension (20 new fields)**
-   - General: `profile_type`, `profile_status`, `title`, `organization`, `linked_in_url`, `bio`
-   - Investor-specific: `geographic_focus`, `investment_stage`, `risk_tolerance`, `target_return`, `check_size_min`, `check_size_max`, `strategic_interest`
-   - Vendor-specific: `service_types`, `geographic_service_area`, `years_of_experience`, `certifications`, `average_project_size`
-   - Developer-specific: `development_focus`, `development_type`, `team_size`, `portfolio_value`
-
-2. **Profile Image Upload Endpoint**
-   - `POST /upload` with S3 integration
-   - AWS credentials needed
-   - Required env vars: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET_NAME`
-
-3. **Connection System**
-   - `ConnectionRequest` model + endpoints (send, accept, decline)
-   - `Conversation` model + endpoints
-   - `Message` model + endpoints
-
-4. **Profile Update**
-   - `PUT /api/users/:id` already works (passes full body to DB)
 
 ---
 
-### Backend Commit Reference:
-**Commit:** `1c66319` - Add backend requirements for Phase 4  
-**Full details:** See `BACKEND_REQUIREMENTS.md`
+## Project Dates
+| Date | Commit | Description |
+|------|--------|-------------|
+| 2026-03-16 | today | Phase 4 implementation (profile enhancements, connection system, S3 upload setup) |
 
 ---
 
-### Next Steps for Backend Development:
+## Implementation Phases Detail
 
-1. **Add new User fields (20 fields)**
-2. **Add ConnectionRequest, Conversation, Message models**
-3. **Create `/upload` endpoint with AWS S3**
-4. **Create connection/messaging API endpoints**
-5. **Configure AWS environment variables**
-
----
-
-## Recent Progress (2026-03-16 Session - Profile Image Upload Setup)
+### Phase 1 - Profile Management ✅ COMPLETE
 
 ### Session Progress Log
 
@@ -413,6 +385,20 @@ Frontend `.env` file has `VITE_AWS_BUCKET_URL=http://localhost:3001` but the fro
 
 ---
 
+- Backend on port 3001 (Flask with in-memory SQLite)
+- Frontend on port 3000 (Vite dev server via tsx)
+
+**Current Issue:**
+Frontend `.env` file has `VITE_AWS_BUCKET_URL=http://localhost:3001` but the frontend is not loading it correctly. The browser console shows "AWS S3 bucket URL not configured" even though the file contains the correct value.
+
+**Possible Causes:**
+1. Frontend server needs full restart (not just hot-reload)
+2. `.env` file location issue
+3. Vite caching issue
+4. Frontend is running but not re-reading `.env`
+
+---
+
 ## Backend Setup Instructions (For Reference)
 
 ### Backend Requirements (Local Development)
@@ -421,7 +407,7 @@ Frontend `.env` file has `VITE_AWS_BUCKET_URL=http://localhost:3001` but the fro
 
 ```bash
 # Navigate to backend
-cd /Users/julianxeer/Downloads/capitalOps-backend-API-main
+cd /Users/julianxeer/dev/work/freelance/capitalops/backend
 
 # Install dependencies
 /opt/homebrew/Frameworks/Python.framework/Versions/3.11/bin/pip3.11 install flask flask-sqlalchemy flask-cors flask-jwt-extended psycopg2-binary python-dotenv boto3
@@ -440,7 +426,7 @@ cp .env.example .env
 
 ```bash
 # Navigate to frontend
-cd /Users/julianxeer/Downloads/capitalOps-frontend-GUI-main
+cd /Users/julianxeer/dev/work/freelance/capitalops/frontend
 
 # Start frontend (includes Express server + Vite)
 npm run dev
@@ -450,15 +436,15 @@ npm run dev
 
 ## Current Configuration
 
-### Frontend `.env` (`/Users/julianxeer/Downloads/capitalOps-frontend-GUI-main/.env`):
+### Frontend `.env` (`/Users/julianxeer/dev/work/freelance/capitalops/frontend/.env`):
 ```env
-BACKEND_URL=http://localhost:3000
+BACKEND_URL=http://localhost:3001
 COMPAT_API_KEY=change-me-in-production
 SESSION_SECRET=change-me-in-production
 VITE_AWS_BUCKET_URL=http://localhost:3001
 ```
 
-### Backend `.env` (`/Users/julianxeer/Downloads/capitalOps-backend-API-main/.env`):
+### Backend `.env` (`/Users/julianxeer/dev/work/freelance/capitalops/backend/.env`):
 ```env
 DATABASE_URL=sqlite:///capitalops.db
 COMPAT_API_KEY=change-me-in-production
@@ -470,38 +456,38 @@ AWS_REGION=us-east-1
 
 ---
 
-## Next Session: Profile Image Upload Debugging
+## Coral8 Integration (Post-MVP)
 
-When you start the next session, please:
+**Status:** Not Started  
+**Priority:** Medium (After Phase 4 completion)
 
-1. **Verify `.env` file exists and contains correct values:**
-   ```bash
-   cat /Users/julianxeer/Downloads/capitalOps-frontend-GUI-main/.env
-   ```
+**Planned Architecture:**
+- Coral8 provides real-time capital deployment data and cash flow modeling
+- Need API layer to bridge Coral8 data with CapitalOps frontend
+- Coral8 data flow: Coral8 → API Gateway → CapitalOps Backend → Frontend
+- likely uses WebSocket or Server-Sent Events (SSE) for real-time updates
 
-2. **Check if frontend is running:**
-   ```bash
-   curl -s http://localhost:3000 | head -5
-   ```
+**Future Backend Requirements:**
+- Real-time data streaming from Coral8
+- Transform Coral8 data models to match CapitalOps entity schema
+- Handle Coral8 authentication and API key management
+- Cache Coral8 data for offline/fallback mode
 
-3. **Test upload endpoint directly:**
-   ```bash
-   curl -s -X POST http://localhost:3001/api/upload -H "X-API-Key: change-me-in-production" -F "file=@/tmp/test.png;filename=test.png" -F "path=avatars/test/test.png"
-   ```
+**Current Status:** Waiting for Coral8 API documentation and requirements
 
-4. **Check browser console** - Open DevTools (F12) → Console tab when uploading to see exact error
+---
 
-5. **Try forcing environment variable in package.json script:**
-   - Check `/Users/julianxeer/Downloads/capitalOps-frontend-GUI-main/package.json` for dev script
-   - May need to add `--env-file .env` or similar Vite flag
+- Backend on port 3001 (Flask with in-memory SQLite)
+- Frontend on port 3000 (Vite dev server via tsx)
 
-6. **Restart frontend cleanly:**
-   ```bash
-   pkill -f "tsx\|node.*tsx" 2>/dev/null
-   sleep 2
-   cd /Users/julianxeer/Downloads/capitalOps-frontend-GUI-main
-   npm run dev
-   ```
+**Current Issue:**
+Frontend `.env` file has `VITE_AWS_BUCKET_URL=http://localhost:3001` but the frontend is not loading it correctly. The browser console shows "AWS S3 bucket URL not configured" even though the file contains the correct value.
+
+**Possible Causes:**
+1. Frontend server needs full restart (not just hot-reload)
+2. `.env` file location issue
+3. Vite caching issue
+4. Frontend is running but not re-reading `.env`
 
 ---
 
