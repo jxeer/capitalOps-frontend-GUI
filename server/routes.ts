@@ -91,7 +91,16 @@ export async function registerRoutes(
     const existing = await storage.getUserByUsername("admin");
     if (!existing) {
       const hashed = await hashPassword("admin123");
-      await storage.createUser({ username: "admin", password: hashed, role: "admin", profileStatus: "active" });
+      await storage.createUser({
+        username: "admin",
+        password: hashed,
+        role: "admin",
+        profileStatus: "active",
+        profileType: "developer",
+        title: "System Administrator",
+        organization: "CapitalOps",
+        email: "admin@capitalops.com",
+      });
       log("Default admin user created (admin/admin123)");
     }
   })();

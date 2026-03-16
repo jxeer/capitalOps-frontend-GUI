@@ -2,85 +2,72 @@
 
 **Last Updated:** 2026-03-16  
 **Current Phase:** Phase 4 - Profile Enhancement & UI Polish  
-**Status:** Phase 1-3 Complete ✅ Theme System Complete ✅
+**Status:** Phase 1-3 Complete ✅ Theme System Complete ✅ Profile Image Upload Setup In Progress 🔄
 
+---
 ## Recent Progress
 
-### Theme System Update ✅
 
-**Removed dim mode - simplified to light/dark only**
+### Profile Image Upload Setup 🔄 IN COMPLETE
 
-- Dim mode was abandoned (poor readability)
-- Dark mode is now the default theme
-- Light/dark toggle preserves user preference in localStorage
-- Chart colors dynamically adjust per theme
+**Status:** Implementation complete, upload testing pending
 
-### Backend Requirements ✅
+**Setup Completed:**
+- ✅ Installed Python 3.11 for Flask backend
+- ✅ Installed Flask dependencies (Flask, SQLAlchemy, Flask-CORS, Flask-JWT, psycopg2-binary, python-dotenv, boto3)
+- ✅ Configured Flask backend with:
+  - User model extended with 20 new profile fields
+  - ConnectionRequest, Conversation, Message models
+  - `/api/upload` endpoint for S3 (with local fallback)
+  - Connection/messaging API endpoints
+- ✅ Created `.env` file with AWS credentials (currently configured with mock S3 for local dev)
+- ✅ Updated `.env` with `AWS_BUCKET_NAME` commented out to use mock URLs
+- ✅ Updated Express server:
+  - Added User model fields
+  - Updated admin seed user with profile fields
+  - Fixed `import.meta.env` instead of `process.env` in s3.ts
+- ✅ Updated frontend `.env`:
+  - `BACKEND_URL=http://localhost:3001`
+  - `VITE_AWS_BUCKET_URL=http://localhost:3001`
 
-**Created `BACKEND_REQUIREMENTS.md` for backend development**  
-Includes:
-- User model extension (20 new fields - profileType, profileStatus, title, organization, etc.)
-- Connection system models + endpoints (ConnectionRequest, Conversation, Message)
-- S3 upload endpoint for profile images
-- AWS environment variables needed (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_BUCKET_NAME)
+**Current Status:**
+- Frontend login works
+- User data loads correctly with all profile fields
+- Profile page UI shows all fields
+- **Profile image upload failing with "AWS S3 bucket URL not configured" error**
+- Frontend is not properly reading `VITE_AWS_BUCKET_URL` from `.env` file
 
----
+**Files Modified This Session:**
+- `client/src/lib/s3.ts` - Updated to use `import.meta.env` with logging
+- `client/src/pages/profile.tsx` - Already has upload logic
+- `client/src/App.tsx` - ThemeToggle and UserMenu components
+- `client/src/components/theme-provider.tsx` - Theme switching
+- `server/routes.ts` - Updated admin seed with profile fields
+- `server/storage.ts` - User schema updated
+- `shared/schema.ts` - User schema extended with 20 fields
+- `app/models.py` - User model with 20 new fields, ConnectionRequest, Conversation, Message
+- `app/routes/compat.py` - Added /upload, connection/messaging endpoints
+- `app/__init__.py` - Added dotenv loading
+- `.env` (Flask) - AWS credentials configured
+- `.env` (Frontend) - Backend and S3 URLs configured
 
-## Files Changed (Recent Session)
+**Backend Running:**
+- Flask on port 3001
+- Express on port 3000
+- SQLite database (local dev, no PostgreSQL needed)
 
-- `client/src/components/theme-provider.tsx` - Simplified to 2 modes, dark as default
-- `client/src/App.tsx` - ThemeToggle updated for light/dark only
-- `client/src/index.css` - Removed dim mode CSS
-- `client/src/pages/dashboard.tsx` - Dynamic chart colors per theme
+**Frontend Running:**
+- Vite on port 3000 (via tsx)
 
----
+**Current Issue:**
+Frontend `.env` file has `VITE_AWS_BUCKET_URL=http://localhost:3001` but the frontend is not loading it correctly. The browser console shows "AWS S3 bucket URL not configured" even though the file contains the correct value.
 
-## Project Directories
+**Possible Causes:**
+1. Frontend server needs full restart (not just hot-reload)
+2. `.env` file location issue
+3. Vite caching issue
+4. Frontend is running but not re-reading `.env`
 
-| Directory | Description |
-|-----------|-------------|
-| `/Users/julianxeer/Downloads/capitalOps-frontend-GUI-main` | Frontend - React + TypeScript + Vite |
-| `/Users/julianxeer/Downloads/capitalOps-backend-API-main` | Backend - Express.js with Flask proxy |
-
----
-
-## Project History & Evolution
-
-| Date | Commit | Description |
-|------|--------|-------------|
-| 2026-03-06 | a125e90 | Initial commit (Blueprint document) |
-| 2026-03-06 | ea508bf | Stack files extracted |
-| 2026-03-06 | 4afb847 | First comprehensive GUI for capital/governance |
-| 2026-03-06 | a304704 | First iteration of GUI |
-| 2026-03-06 | a7429c2 | Published App |
-| 2026-03-06 | 3a07995 | Frontend connected to backend (proxy + fallback) |
-| 2026-03-06 | 517f73f | Status colors updated for backend integration |
-| 2026-03-06 | b10c22e | Published App |
-| 2026-03-06 | 6c43978 | User authentication + CRUD operations |
-| 2026-03-06 | bfe7294 | Secure Google sign-in authentication |
-| 2026-03-06 | f499a49 | Investor matching on Deals Page + Stat cards |
-| 2026-03-06 | 66ff786 | Merge conflict resolved |
-| 2026-03-06 | d854e8b | Google OAuth progress |
-| 2026-03-06 | 46ae467 | CRUD mutations connected to live backend with MemStorage fallback |
-| 2026-03-06 | 8b8b596 | Status enums aligned with backend values |
-| 2026-03-06 | 66bdca8 | GUI updates |
-| 2026-03-06 | 94bba63 | Published App |
-| 2026-03-06 | 5c5f068 | Screenshot UI update |
-| 2026-03-06 | 56075a1 | Progress saved |
-| 2026-03-06 | 8b846ef | Visual risk analysis + default admin login |
-| 2026-03-06 | 051584e | Visual appearance enhancement across pages |
-| 2026-03-06 | 78712f2 | Delete buttons test identifiers |
-| 2026-03-06 | 43febe0 | Google Auth credentials fix + dotenv support |
-| 2026-03-06 | 4195de1 | Authentication restored + favicon updated |
-| 2026-03-06 | 7823b23 | Investor/Vendor/Developer profile types |
-| 2026-03-06 | d63af11 | Phase 1-2 (Profile + Visual Features complete) |
-| 2026-03-06 | 19de9db | Phase 3 (Connections & Messaging complete) |
-| 2026-03-06 | 960dfd1 | IMPLEMENTATION.md updated |
-| 2026-03-06 | 3dbbaf2 | Phase 4 progress (comprehensive schema) |
-| 2026-03-06 | aee5c56 | PLAN.md added |
-| 2026-03-06 | f04ccfc | PLAN.md updated with comprehensive context |
-
----
 
 ## Project Overview
 
@@ -362,9 +349,163 @@ Your backend needs to provide a POST /upload endpoint that accepts multipart/for
 
 ---
 
-### For Next Session:
+## Recent Progress (2026-03-16 Session - Profile Image Upload Setup)
 
-When you start a new session, please ask the user:
+### Session Progress Log
 
-**"I see Phase 4 is in progress with these backend requirements. Should I begin working on the backend from the beginning and implement all these features, or would you like to focus on something specific first?"**
+**Profile Image Upload Setup - IN COMPLETE**
 
+**Setup Completed:**
+1. ✅ Installed Python 3.11 for Flask backend
+2. ✅ Installed Flask dependencies (Flask, SQLAlchemy, Flask-CORS, Flask-JWT, psycopg2-binary, python-dotenv, boto3)
+3. ✅ Configured Flask backend with:
+   - User model extended with 20 new profile fields
+   - ConnectionRequest, Conversation, Message models
+   - `/api/upload` endpoint for S3 (with local fallback)
+   - Connection/messaging API endpoints
+4. ✅ Created `.env` file with AWS credentials (currently configured with mock S3 for local dev)
+5. ✅ Updated `.env` with `AWS_BUCKET_NAME` commented out to use mock URLs
+6. ✅ Updated Express server:
+   - Added User model fields
+   - Updated admin seed user with profile fields
+   - Fixed `import.meta.env` instead of `process.env` in s3.ts
+7. ✅ Updated frontend `.env`:
+   - `BACKEND_URL=http://localhost:3000`
+   - `VITE_AWS_BUCKET_URL=http://localhost:3001`
+
+**Current Status:**
+- Frontend login works
+- User data loads correctly with all profile fields
+- Profile page UI shows all fields
+- **Profile image upload failing with "AWS S3 bucket URL not configured" error**
+- Frontend is not properly reading `VITE_AWS_BUCKET_URL` from `.env` file
+
+**Files Modified This Session:**
+- `client/src/lib/s3.ts` - Updated to use `import.meta.env` with logging
+- `client/src/pages/profile.tsx` - Already has upload logic
+- `client/src/App.tsx` - ThemeToggle and UserMenu components
+- `client/src/components/theme-provider.tsx` - Theme switching
+- `server/routes.ts` - Updated admin seed with profile fields
+- `server/storage.ts` - User schema updated
+- `shared/schema.ts` - User schema extended with 20 fields
+- `app/models.py` - User model with 20 new fields, ConnectionRequest, Conversation, Message
+- `app/routes/compat.py` - Added /upload, connection/messaging endpoints
+- `app/__init__.py` - Added dotenv loading
+- `.env` (Flask) - AWS credentials configured
+- `.env` (Frontend) - Backend and S3 URLs configured
+
+**Backend Running:**
+- Flask on port 3001
+- Express on port 3000
+- SQLite database (local dev, no PostgreSQL needed)
+
+**Frontend Running:**
+- Vite on port 3000 (via tsx)
+
+**Current Issue:**
+Frontend `.env` file has `VITE_AWS_BUCKET_URL=http://localhost:3001` but the frontend is not loading it correctly. The browser console shows "AWS S3 bucket URL not configured" even though the file contains the correct value.
+
+**Possible Causes:**
+1. Frontend server needs full restart (not just hot-reload)
+2. `.env` file location issue
+3. Vite caching issue
+4. Frontend is running but not re-reading `.env`
+
+---
+
+## Backend Setup Instructions (For Reference)
+
+### Backend Requirements (Local Development)
+
+**Python 3.11+ with pip installed**
+
+```bash
+# Navigate to backend
+cd /Users/julianxeer/Downloads/capitalOps-backend-API-main
+
+# Install dependencies
+/opt/homebrew/Frameworks/Python.framework/Versions/3.11/bin/pip3.11 install flask flask-sqlalchemy flask-cors flask-jwt-extended psycopg2-binary python-dotenv boto3
+
+# Create .env file (copy from .env.example)
+cp .env.example .env
+# Fill in AWS credentials (or comment out AWS_BUCKET_NAME for local dev mock)
+
+# Run Flask backend
+/opt/homebrew/Frameworks/Python.framework/Versions/3.11/bin/python3.11 -m flask run --host 0.0.0.0 --port 3001
+```
+
+### Frontend Requirements
+
+**Node.js 20+ with npm installed**
+
+```bash
+# Navigate to frontend
+cd /Users/julianxeer/Downloads/capitalOps-frontend-GUI-main
+
+# Start frontend (includes Express server + Vite)
+npm run dev
+```
+
+---
+
+## Current Configuration
+
+### Frontend `.env` (`/Users/julianxeer/Downloads/capitalOps-frontend-GUI-main/.env`):
+```env
+BACKEND_URL=http://localhost:3000
+COMPAT_API_KEY=change-me-in-production
+SESSION_SECRET=change-me-in-production
+VITE_AWS_BUCKET_URL=http://localhost:3001
+```
+
+### Backend `.env` (`/Users/julianxeer/Downloads/capitalOps-backend-API-main/.env`):
+```env
+DATABASE_URL=sqlite:///capitalops.db
+COMPAT_API_KEY=change-me-in-production
+# AWS_ACCESS_KEY_ID=your-aws-access-key-id
+# AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
+# AWS_BUCKET_NAME=capitalops-images  # Commented for local dev
+AWS_REGION=us-east-1
+```
+
+---
+
+## Next Session: Profile Image Upload Debugging
+
+When you start the next session, please:
+
+1. **Verify `.env` file exists and contains correct values:**
+   ```bash
+   cat /Users/julianxeer/Downloads/capitalOps-frontend-GUI-main/.env
+   ```
+
+2. **Check if frontend is running:**
+   ```bash
+   curl -s http://localhost:3000 | head -5
+   ```
+
+3. **Test upload endpoint directly:**
+   ```bash
+   curl -s -X POST http://localhost:3001/api/upload -H "X-API-Key: change-me-in-production" -F "file=@/tmp/test.png;filename=test.png" -F "path=avatars/test/test.png"
+   ```
+
+4. **Check browser console** - Open DevTools (F12) → Console tab when uploading to see exact error
+
+5. **Try forcing environment variable in package.json script:**
+   - Check `/Users/julianxeer/Downloads/capitalOps-frontend-GUI-main/package.json` for dev script
+   - May need to add `--env-file .env` or similar Vite flag
+
+6. **Restart frontend cleanly:**
+   ```bash
+   pkill -f "tsx\|node.*tsx" 2>/dev/null
+   sleep 2
+   cd /Users/julianxeer/Downloads/capitalOps-frontend-GUI-main
+   npm run dev
+   ```
+
+---
+
+## Project Dates
+| Date | Commit | Description |
+|------|--------|-------------|
+| 2026-03-16 | today | Phase 4 implementation (profile enhancements, connection system, S3 upload setup) |
