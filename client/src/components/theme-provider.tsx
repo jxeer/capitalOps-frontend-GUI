@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark" | "dim";
+type Theme = "light" | "dark";
 
 const ThemeContext = createContext<{
   theme: Theme;
@@ -25,9 +25,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (theme === "dark") {
       root.classList.add("dark");
       root.classList.remove("dim");
-    } else if (theme === "dim") {
-      root.classList.add("dim");
-      root.classList.remove("dark");
     } else {
       root.classList.remove("dark");
       root.classList.remove("dim");
@@ -36,13 +33,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme]);
 
   const toggleTheme = () => {
-    if (theme === "dark") {
-      setTheme("dim");
-    } else if (theme === "dim") {
-      setTheme("light");
-    } else {
-      setTheme("dark");
-    }
+    setTheme(theme === "dark" ? "light" : "dark");
   };
 
   return (

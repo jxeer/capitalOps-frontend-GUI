@@ -53,6 +53,34 @@ const CHART_COLORS = {
 
 const PIE_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
 
+const getChartColors = () => {
+  const rootStyles = getComputedStyle(document.documentElement);
+  const bgHsl = rootStyles.getPropertyValue("--background").trim();
+  const isDark = bgHsl.includes("0% 7%)");
+  
+  if (isDark) {
+    return {
+      primary: "#60a5fa",
+      secondary: "#34d399",
+      tertiary: "#fbbf24",
+      quaternary: "#a78bfa",
+      accent: "#f472b6",
+      grid: "rgba(255,255,255,0.15)",
+      text: "rgba(255,255,255,0.7)",
+    };
+  }
+  
+  return {
+    primary: "#3b82f6",
+    secondary: "#10b981",
+    tertiary: "#f59e0b",
+    quaternary: "#8b5cf6",
+    accent: "#ec4899",
+    grid: "rgba(0,0,0,0.1)",
+    text: "rgba(0,0,0,0.4)",
+  };
+};
+
 export default function Dashboard() {
   const { data: backendStatus } = useQuery<{
     connected: boolean;
@@ -76,6 +104,7 @@ export default function Dashboard() {
   const { data: riskFlags } = useQuery<RiskFlag[]>({ queryKey: ["/api/risk-flags"] });
   const { data: allocations } = useQuery<Allocation[]>({ queryKey: ["/api/allocations"] });
   const { data: investors } = useQuery<Investor[]>({ queryKey: ["/api/investors"] });
+  const CHART_COLORS = getChartColors();
 
   if (statsLoading) {
     return (

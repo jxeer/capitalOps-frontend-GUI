@@ -38,8 +38,8 @@ import AuthPage from "@/pages/auth-page";
 
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
-  const icons = { light: <Sun className="h-4 w-4" />, dim: <Moon className="h-4 w-4" />, dark: <Moon className="h-4 w-4" /> };
-  const labels = { light: "Switch to dim mode", dim: "Switch to dark mode", dark: "Switch to light mode" };
+  const icons = { light: <Sun className="h-4 w-4" />, dark: <Moon className="h-4 w-4" /> };
+  const labels = { light: "Switch to dark mode", dark: "Switch to light mode" };
   return (
     <Button size="icon" variant="ghost" onClick={toggleTheme} data-testid="button-theme-toggle" aria-label={labels[theme as keyof typeof labels]}>
       {icons[theme as keyof typeof icons]}
