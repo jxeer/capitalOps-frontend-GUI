@@ -6,6 +6,46 @@
 
 ---
 
+## Project History & Evolution
+
+### Timeline
+
+| Date | Commit | Description |
+|------|--------|-------------|
+| 2026-03-06 | a125e90 | Initial commit (Blueprint document) |
+| 2026-03-06 | ea508bf | Stack files extracted |
+| 2026-03-06 | 4afb847 | First comprehensive GUI for capital/governance |
+| 2026-03-06 | a304704 | First iteration of GUI |
+| 2026-03-06 | a7429c2 | Published App |
+| 2026-03-06 | 3a07995 | Frontend connected to backend (proxy + fallback) |
+| 2026-03-06 | 517f73f | Status colors updated for backend integration |
+| 2026-03-06 | b10c22e | Published App |
+| 2026-03-06 | 6c43978 | User authentication + CRUD operations |
+| 2026-03-06 | bfe7294 | Secure Google sign-in authentication |
+| 2026-03-06 | f499a49 | Investor matching on Deals Page + Stat cards |
+| 2026-03-06 | 66ff786 | Merge conflict resolved |
+| 2026-03-06 | d854e8b | Google OAuth progress |
+| 2026-03-06 | 46ae467 | CRUD mutations connected to live backend with MemStorage fallback |
+| 2026-03-06 | 8b8b596 | Status enums aligned with backend values |
+| 2026-03-06 | 66bdca8 | GUI updates |
+| 2026-03-06 | 94bba63 | Published App |
+| 2026-03-06 | 5c5f068 | Screenshot UI update |
+| 2026-03-06 | 56075a1 | Progress saved |
+| 2026-03-06 | 8b846ef | Visual risk analysis + default admin login |
+| 2026-03-06 | 051584e | Visual appearance enhancement across pages |
+| 2026-03-06 | 78712f2 | Delete buttons test identifiers |
+| 2026-03-06 | 43febe0 | Google Auth credentials fix + dotenv support |
+| 2026-03-06 | 4195de1 | Authentication restored + favicon updated |
+| 2026-03-06 | 7823b23 | Investor/Vendor/Developer profile types |
+| 2026-03-06 | d63af11 | Phase 1-2 (Profile + Visual Features complete) |
+| 2026-03-06 | 19de9db | Phase 3 (Connections & Messaging complete) |
+| 2026-03-06 | 960dfd1 | IMPLEMENTATION.md updated |
+| 2026-03-06 | 3dbbaf2 | Phase 4 progress (comprehensive schema) |
+| 2026-03-06 | aee5c56 | PLAN.md added |
+| 2026-03-06 | f04ccfc | PLAN.md updated with comprehensive context |
+
+---
+
 ## Project Overview
 
 **CapitalOps** is a capital + governance operating layer for real estate development. It's designed to streamline capital raising, project governance, and stakeholder communication for commercial real estate development.
