@@ -78,7 +78,7 @@ async function withBackendFallback(
 
   if (result.ok) {
     log(`Proxied ${req.method} ${backendPath} -> backend (${result.status})`, "proxy");
-    const corsHeaders = {"Access-Control-Allow-Origin": "http://localhost:3000", "Access-Control-Allow-Credentials": "true", "Vary": "Origin"}; res.set(corsHeaders); return res.status(result.status).json(result.data);
+    return res.status(result.status).json(result.data);
   }
 
   // Backend unavailable - use in-memory storage
@@ -813,11 +813,8 @@ export async function registerRoutes(
 
   // Upload route - proxy to Flask backend or use local storage fallback
   // Handles multipart/form-data requests for file uploads
-
-  // Upload route - proxy to Flask backend or use local storage fallback
-  // Handles multipart/form-data requests for file uploads
   app.post("/api/upload", requireAuth, async (req, res) => {
-    log("POST /api/upload received", "proxy");
+    log(`POST /api/upload received`, "proxy");
     const user = getUserFromRequest(req);
     if (!user) return res.status(401).json({ message: "Not authenticated" });
     
@@ -857,12 +854,6 @@ export async function registerRoutes(
           if (response.ok) {
             const data = await response.json();
             log(`Proxied POST /api/upload -> backend (${response.status})`, "proxy");
-            // Add CORS headers to response
-            res.set({
-              "Access-Control-Allow-Origin": "http://localhost:3000",
-              "Access-Control-Allow-Credentials": "true",
-              "Vary": "Origin"
-            });
             return res.status(response.status).json(data);
           }
           log(`Backend proxy failed for /api/upload, using local storage`, "proxy");
@@ -873,12 +864,6 @@ export async function registerRoutes(
     }
     
     // Local storage fallback - return a mock URL
-    // Add CORS headers to fallback response as well
-    res.set({
-      "Access-Control-Allow-Origin": "http://localhost:3000",
-      "Access-Control-Allow-Credentials": "true",
-      "Vary": "Origin"
-    });
     res.status(201).json({
       url: `http://localhost:3000/uploads/${Date.now()}-upload.png`,
       key: `uploads/${Date.now()}-upload.png`,

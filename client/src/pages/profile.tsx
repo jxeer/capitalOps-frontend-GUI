@@ -22,6 +22,7 @@ export default function Profile() {
     profileStatus: "pending",
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [title, setTitle] = useState("");
   const [organization, setOrganization] = useState("");
@@ -39,6 +40,12 @@ export default function Profile() {
       setLinkedInUrl(user.linkedInUrl || "");
       setBio(user.bio || "");
     }
+    // Cleanup preview URL when component unmounts or user changes
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
   }, [user]);
 
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,6 +60,9 @@ export default function Profile() {
         return;
       }
       setAvatarFile(file);
+      // Create preview URL for immediate feedback
+      const previewUrl = URL.createObjectURL(file);
+      setAvatarPreview(previewUrl);
     }
   };
 
@@ -129,12 +139,20 @@ export default function Profile() {
         <Card className="lg:col-span-1">
           <CardContent className="pt-6">
             <div className="flex flex-col items-center text-center space-y-4">
-              {user.profileImage ? (
+              {avatarPreview ? (
+                // Show preview when image is selected but not yet uploaded
+                <Avatar className="h-24 w-24 ring-4 ring-ring/10">
+                  <AvatarImage src={avatarPreview} alt={user.username} />
+                  <AvatarFallback>{avatarFallback}</AvatarFallback>
+                </Avatar>
+              ) : user.profileImage ? (
+                // Show stored profile image
                 <Avatar className="h-24 w-24 ring-4 ring-ring/10">
                   <AvatarImage src={user.profileImage} alt={user.username} />
                   <AvatarFallback>{avatarFallback}</AvatarFallback>
                 </Avatar>
               ) : (
+                // Show default avatar
                 <Avatar className="h-24 w-24 bg-primary text-primary-foreground ring-4 ring-ring/10">
                   <AvatarFallback className="text-2xl">{avatarFallback}</AvatarFallback>
                 </Avatar>
