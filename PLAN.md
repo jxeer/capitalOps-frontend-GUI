@@ -613,3 +613,22 @@ AWS_REGION=us-east-1
 | Date | Commit | Description |
 |------|--------|-------------|
 | 2026-03-16 | today | Phase 4 implementation (profile enhancements, connection system, S3 upload setup) |
+
+## Replit Deployment Configuration
+
+When deploying to Replit, configure environment variables:
+
+### Frontend (client/.env):
+- `VITE_AWS_BUCKET_URL=/api` - Keep relative URL for same-origin requests
+- `VITE_COMPAT_API_KEY` - Set to your API key
+
+### Server (server/.env):
+- `BACKEND_URL` - Update to your Flask backend URL:
+  - Same repl (default): `http://localhost:3001` or your repl's port
+  - Separate backend repl: `https://your-username.capitalops-backend.replit.app`
+
+### Flask Backend (backend/.env):
+- No URL changes needed
+- Ensure `COMPAT_API_KEY` matches what's configured in frontend
+
+**Note:** The relative URL approach (`/api`) only works when frontend and backend are on the same domain. For separate Replit instances, use full URLs.
