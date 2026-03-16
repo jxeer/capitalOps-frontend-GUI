@@ -8,7 +8,22 @@
 
 ## Project Overview
 
-**CapitalOps** is a capital + governance operating layer for real estate development. It's a React + TypeScript frontend with an Express.js backend that proxies requests to an external Flask backend.
+**CapitalOps** is a capital + governance operating layer for real estate development. It's designed to streamline capital raising, project governance, and stakeholder communication for commercial real estate development.
+
+**What the App Does:**
+- Portfolio management for real estate development projects
+- Capital raising deal tracking and investor management
+- Project lifecycle management with milestones and risk flags
+- Investor portal for viewing allocations and committing capital
+- Asset and vendor management for property operations
+- Work order tracking for maintenance and compliance
+- Professional networking (connections) and messaging between stakeholders
+
+**Target Users:**
+- Real estate investors (accredited investors, institutional investors)
+- Vendors (contractors, architects, engineers, etc.)
+- Developers (real estate development firms)
+- Portfolio managers and project managers
 
 **Tech Stack:**
 - Frontend: React 18, TypeScript, Vite, TanStack Query, Wouter routing, Tailwind CSS, shadcn/ui
@@ -114,10 +129,10 @@
 - Schema types in AuthUser and Zod schemas
 
 **Remaining Tasks:**
-- [ ] Update Profile page to show the new type-specific fields when editing
-- [ ] Add conditional UI to show only relevant fields based on profileType
-- [ ] Test profile image upload functionality
-- [ ] Test all profile field persistence
+- Update Profile page to show the new type-specific fields when editing
+- Add conditional UI to show only relevant fields based on profileType
+- Test profile image upload functionality
+- Test all profile field persistence
 
 **Backend Requirements:**
 Your backend needs to provide a POST /upload endpoint that accepts multipart/form-data and returns { url, key }. Environment variable VITE_AWS_BUCKET_URL needs to be configured.
@@ -136,6 +151,47 @@ Your backend needs to provide a POST /upload endpoint that accepts multipart/for
 - Vendor comparison tools
 
 **Status:** Waiting for client requirements
+
+---
+
+## Complete Database Schema
+
+### Core Entities:
+| Entity | Description |
+|--------|-------------|
+| Portfolio | Top-level container |
+| Asset | Real estate assets (belongs to Portfolio) |
+| Project | Development projects (belongs to Asset) |
+| Deal | Capital raising deals (belongs to Project) |
+| Investor | Investor profiles with preferences |
+| Allocation | Investor commitments to deals |
+| Milestone | Project milestones |
+| Vendor | Service providers |
+| WorkOrder | Maintenance/compliance tasks |
+| RiskFlag | Risk monitoring |
+
+### Connection & Messaging Entities:
+| Entity | Description |
+|--------|-------------|
+| ConnectionRequest | User connection requests (pending/accepted/declined) |
+| Conversation | 1-on-1 chat sessions |
+| Message | Individual messages in conversations |
+
+### User Profile Fields:
+
+**General (All Types):**
+- title, organization, linkedInUrl, bio
+
+**Investor-Specific:**
+- geographicFocus, investmentStage, targetReturn
+- checkSizeMin, checkSizeMax, riskTolerance, strategicInterest
+
+**Vendor-Specific:**
+- serviceTypes, geographicServiceArea, yearsOfExperience
+- certifications, averageProjectSize
+
+**Developer-Specific:**
+- developmentFocus, developmentType, teamSize, portfolioValue
 
 ---
 
@@ -159,23 +215,20 @@ Your backend needs to provide a POST /upload endpoint that accepts multipart/for
 
 ---
 
-## Quick Reference: Database Schema
+## Quick Reference: Project Structure
 
-### User Profile Fields:
+**Key Files & Folders:**
+- `client/src/pages/` - Route components (dashboard, assets, projects, etc.)
+- `client/src/components/` - UI components
+- `server/routes.ts` - API endpoints with proxy/fallback logic
+- `server/storage.ts` - In-memory storage with seed data
+- `shared/schema.ts` - Zod schemas and TypeScript types
+- `PLAN.md` - This file - implementation plan & status
 
-**General (All Types):**
-- title, organization, linkedInUrl, bio
-
-**Investor-Specific:**
-- geographicFocus, investmentStage, targetReturn
-- checkSizeMin, checkSizeMax, riskTolerance, strategicInterest
-
-**Vendor-Specific:**
-- serviceTypes, geographicServiceArea, yearsOfExperience
-- certifications, averageProjectSize
-
-**Developer-Specific:**
-- developmentFocus, developmentType, teamSize, portfolioValue
+**API Pattern:**
+- All routes first try to proxy to BACKEND_URL
+- Falls back to in-memory storage if unavailable
+- POST/PUT/DELETE require auth; GET routes work without
 
 ---
 
