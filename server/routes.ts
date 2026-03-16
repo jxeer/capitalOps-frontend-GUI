@@ -1,3 +1,7 @@
+// Server routes configuration for CapitalOps API endpoints
+// Handles proxying to Flask backend OR fallback to in-memory storage
+// All routes follow the pattern: try backend first, use local storage if unavailable
+
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
@@ -5,9 +9,13 @@ import { log } from "./index";
 import { setupAuth, requireAuth, hashPassword, comparePasswords, setJwtCookie, clearJwtCookie, getUserFromRequest } from "./auth";
 import passport from "passport";
 
+// Backend URL from environment - proxies /api/* routes to Flask backend
 const BACKEND_URL = process.env.BACKEND_URL || "";
 
+// Proxy request to Flask backend and return result
+// Falls back to local storage if backend unavailable
 async function proxyToBackend(path: string, method: string, body?: unknown): Promise<{ ok: boolean; status: number; data: unknown }> {
+  // If no backend URL configured, use local storage
   if (!BACKEND_URL) return { ok: false, status: 0, data: null };
 
   try {
@@ -16,6 +24,7 @@ async function proxyToBackend(path: string, method: string, body?: unknown): Pro
       "Content-Type": "application/json",
       "Accept": "application/json",
     };
+    // Add API key for authentication with backend
     if (process.env.COMPAT_API_KEY) {
       headers["X-API-Key"] = process.env.COMPAT_API_KEY;
     }
@@ -36,6 +45,9 @@ async function proxyToBackend(path: string, method: string, body?: unknown): Pro
   }
 }
 
+// Helper to try backend first, fallback to local storage for any request type
+// Logs which method was used for debugging
+// Used for POST/PUT/DELETE mutations that require write operations
 async function withBackendFallback(
   req: Request,
   res: Response,
@@ -49,14 +61,20 @@ async function withBackendFallback(
     return res.status(result.status).json(result.data);
   }
 
+  // Backend unavailable - use in-memory storage
   log(`Backend unavailable for ${backendPath}, using local storage`, "proxy");
   await localHandler();
 }
 
+// Check if ID matches seed data pattern (asset|proj|deal|inv|alloc|ms|vend|wo|rf|port)-\d+
+// Seed IDs are pre-populated with realistic test data
 function isSeedId(id: string): boolean {
   return /^(asset|proj|deal|inv|alloc|ms|vend|wo|rf|port)-\d+$/.test(id);
 }
 
+// For GET list requests - merge backend results with locally-created items
+// Backend returns seed data, local storage has user-created items with UUIDs
+// Combines both to show complete list to user
 async function withMergedList<T extends { id: string }>(
   req: Request,
   res: Response,
@@ -75,6 +93,7 @@ async function withMergedList<T extends { id: string }>(
     return res.json(merged);
   }
 
+  // Backend unavailable - use only local storage
   log(`Backend unavailable for ${backendPath}, using local storage`, "proxy");
   const localItems = await getLocal();
   res.json(localItems);

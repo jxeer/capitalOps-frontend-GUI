@@ -1,3 +1,24 @@
+/**
+ * CapitalOps Projects Page
+ * 
+ * Purpose: Manages real estate development projects throughout their lifecycle,
+ * tracking milestones, budgets, timelines, and execution progress.
+ * 
+ * Approach:
+ * - Visual project cards with progress indicators for budget and milestone completion
+ * - Risk flag detection based on milestone delays
+ * - Date-based urgency indicators (overdue, approaching deadline)
+ * - Full CRUD operations with media and location integration
+ * 
+ * Key Features:
+ * - Project status visualization with color-coded status bars
+ * - Budget burn tracking with progress bars
+ * - Milestone progress overview
+ * - Days remaining countdown with urgency indicators
+ * - Media gallery and location mapping for each project
+ * - Risk flag detection based on milestone delays
+ */
+
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { FolderKanban, Calendar, User, AlertTriangle, Plus, Trash2, Pencil, TrendingUp, Clock, CheckCircle2 } from "lucide-react";
@@ -27,6 +48,11 @@ const emptyForm = {
   description: "",
 };
 
+/**
+ * Returns gradient CSS classes for project status bar based on status value
+ * @param status - Project status string
+ * @returns Tailwind gradient class string
+ */
 function getStatusStrip(status: string) {
   const s = status.toLowerCase();
   if (s === "in progress" || s === "on track") return "from-chart-2/30 to-chart-2/5";
@@ -37,6 +63,17 @@ function getStatusStrip(status: string) {
   return "from-primary/20 to-primary/5";
 }
 
+/**
+ * Calculates days remaining until target completion date
+ * Determines urgency and overdue status
+ * 
+ * @param targetDate - Target completion date string (ISO)
+ * @returns Object with days count, urgent flag, and overdue flag
+ * 
+ * @example
+ * getDaysRemaining("2026-06-15") -> { days: 90, urgent: true, overdue: false }
+ * getDaysRemaining("2026-01-01") -> { days: -45, urgent: false, overdue: true }
+ */
 function getDaysRemaining(targetDate: string): { days: number; urgent: boolean; overdue: boolean } {
   const now = new Date();
   const target = new Date(targetDate);
@@ -44,6 +81,10 @@ function getDaysRemaining(targetDate: string): { days: number; urgent: boolean; 
   return { days, urgent: days < 60 && days >= 0, overdue: days < 0 };
 }
 
+/**
+ * Main Projects page component
+ * Handles all project CRUD operations and displays project portfolio
+ */
 export default function Projects() {
   const { data: projects, isLoading } = useQuery<Project[]>({ queryKey: ["/api/projects"] });
   const { data: assets } = useQuery<Asset[]>({ queryKey: ["/api/assets"] });
@@ -57,8 +98,22 @@ export default function Projects() {
   const [location, setLocation] = useState<{ address: string; lat: number; lng: number } | undefined>(undefined);
   const [mediaPreviews, setMediaPreviews] = useState<{ url: string; type: "image" | "video"; name: string }[]>([]);
 
+  /**
+   * Sets a field value in the form state
+   * @param key - Form field key
+   * @param value - New value for the field
+   */
   const setField = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
+  
+  /**
+   * Opens dialog for creating new project
+   */
   const openCreate = () => { setEditing(null); setForm(emptyForm); setLocation(undefined); setMediaPreviews([]); setOpen(true); };
+  
+  /**
+   * Opens dialog for editing existing project
+   * @param project - Project object to edit
+   */
   const openEdit = (project: Project) => {
     setEditing(project);
     setForm({ assetId: project.assetId, phase: project.phase, startDate: project.startDate, targetCompletion: project.targetCompletion, budgetTotal: String(project.budgetTotal), budgetActual: String(project.budgetActual), status: project.status, pmAssigned: project.pmAssigned, description: project.description || "" });
@@ -66,32 +121,57 @@ export default function Projects() {
     setMediaPreviews([]);
     setOpen(true);
   };
+  
+  /**
+   * Closes dialog and resets all form state
+   */
   const closeDialog = () => { setOpen(false); setEditing(null); setForm(emptyForm); setLocation(undefined); setMediaPreviews([]); };
 
+  /**
+   * Mutation for creating new projects
+   * Invalidates queries after success to refresh data
+   */
   const createMutation = useMutation({
     mutationFn: async (data: any) => { const res = await apiRequest("POST", "/api/projects", data); return res.json(); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/projects"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Project created" }); closeDialog(); },
     onError: (err: Error) => { toast({ title: "Failed to create project", description: err.message, variant: "destructive" }); },
   });
 
+  /**
+   * Mutation for updating existing projects
+   * Invalidates queries after success to refresh data
+   */
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => { const res = await apiRequest("PUT", `/api/projects/${id}`, data); return res.json(); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/projects"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Project updated" }); closeDialog(); },
     onError: (err: Error) => { toast({ title: "Failed to update project", description: err.message, variant: "destructive" }); },
   });
 
+  /**
+   * Mutation for deleting projects
+   * Invalidates queries after success to refresh data
+   */
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/projects/${id}`); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/projects"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Project deleted" }); },
     onError: (err: Error) => { toast({ title: "Failed to delete", description: err.message, variant: "destructive" }); },
   });
 
+  /**
+   * Handles form submission for both create and edit operations
+   * @param e - Form submit event
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { ...form, portfolioId: "port-001", budgetTotal: Number(form.budgetTotal) || 0, budgetActual: Number(form.budgetActual) || 0, location: location || undefined };
     if (editing) { updateMutation.mutate({ id: editing.id, data: payload }); } else { createMutation.mutate(payload); }
   };
 
+  /**
+   * Handles media upload from file input
+   * Creates object URLs for preview before actual upload
+   * @param files - FileList from input element
+   */
   const handleMediaUpload = async (files: FileList) => {
     const newPreviews: { url: string; type: "image" | "video"; name: string }[] = [];
     for (let i = 0; i < files.length; i++) {
@@ -104,10 +184,17 @@ export default function Projects() {
     setMediaPreviews((prev) => [...prev, ...newPreviews]);
   };
 
+  /**
+   * Removes media from preview list
+   * @param urlToRemove - Object URL to remove from previews
+   */
   const handleRemoveMedia = (urlToRemove: string) => {
     setMediaPreviews((prev) => prev.filter((p) => p.url !== urlToRemove));
   };
 
+  /**
+   * Shows skeleton loader while data is loading
+   */
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -117,6 +204,9 @@ export default function Projects() {
     );
   }
 
+  /**
+   * Calculates portfolio statistics
+   */
   const activeProjects = projects?.filter(p => ["In Progress", "On Track", "At Risk"].includes(p.status)).length || 0;
   const totalBudget = projects?.reduce((sum, p) => sum + p.budgetTotal, 0) || 0;
 

@@ -1,3 +1,26 @@
+/**
+ * CapitalOps Dashboard Page
+ * 
+ * Purpose: Primary landing page providing executive overview of the entire capital operations
+ * portfolio with statistics, charts, real-time data, and quick access to key metrics.
+ * 
+ * Approach:
+ * - Uses chart.js/Recharts for interactive data visualization
+ * - Fetches data from multiple endpoints simultaneously with TanStack Query
+ * - Real-time backend connection status indicator
+ * - Stat cards with trend indicators
+ * - Dynamic chart color theming based on user's dark/light mode preference
+ * 
+ * Key Features:
+ * - Portfolio summary with assets under management
+ * - Capital pipeline chart showing raised vs required
+ * - Deal pipeline funnel visualization
+ * - Project budget burn tracking
+ * - Risk alerts section
+ * - Recent allocations and active deals lists
+ * - Backend connection status indicator (online/local mode)
+ */
+
 import { useQuery } from "@tanstack/react-query";
 import {
   Building2,
@@ -53,6 +76,12 @@ const CHART_COLORS = {
 
 const PIE_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
 
+/**
+ * Detects current theme (dark/light) and returns appropriate chart colors
+ * Reads computed background color from CSS to determine theme preference
+ * 
+ * @returns Object with chart colors adapted to current theme
+ */
 const getChartColors = () => {
   const rootStyles = getComputedStyle(document.documentElement);
   const bgHsl = rootStyles.getPropertyValue("--background").trim();
@@ -81,6 +110,10 @@ const getChartColors = () => {
   };
 };
 
+/**
+ * Main Dashboard page component
+ * Aggregates data from multiple APIs and displays comprehensive portfolio overview
+ */
 export default function Dashboard() {
   const { data: backendStatus } = useQuery<{
     connected: boolean;
@@ -106,6 +139,9 @@ export default function Dashboard() {
   const { data: investors } = useQuery<Investor[]>({ queryKey: ["/api/investors"] });
   const CHART_COLORS = getChartColors();
 
+  /**
+   * Shows skeleton loader while initial data is loading
+   */
   if (statsLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -119,25 +155,41 @@ export default function Dashboard() {
     );
   }
 
+  /**
+   * Calculates overall capital progress percentage
+   */
   const capitalProgress = stats && stats.totalCapitalRequired > 0
     ? Math.round((stats.totalCapitalRaised / stats.totalCapitalRequired) * 100)
     : 0;
 
+  /**
+   * Looks up investor name by ID
+   * @param id - Investor ID to look up
+   * @returns Investor name or "Unknown" if not found
+   */
   const getInvestorName = (id: string) => investors?.find(i => i.id === id)?.name || "Unknown";
 
-  // Generate capital raised over time data (mock data based on deals)
+  /**
+   * Generates capital raised over time data for area chart
+   * Maps deals to chart data points showing required vs raised
+   */
   const capitalOverTimeData = deals?.map((deal, index) => ({
     name: deal.phase || `Deal ${index + 1}`,
     required: deal.capitalRequired / 1000000,
     raised: deal.capitalRaised / 1000000,
   })) || [];
 
-  // Deal pipeline funnel data
+  /**
+   * Counts deals by status for pipeline funnel chart
+   */
   const dealStatusCounts = deals?.reduce((acc, deal) => {
     acc[deal.status] = (acc[deal.status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
+  /**
+   * Generates pipeline data for pie chart showing deal status distribution
+   */
   const pipelineData = [
     { name: "Draft", value: dealStatusCounts?.["Draft"] || 0, fill: PIE_COLORS[0] },
     { name: "Open", value: dealStatusCounts?.["Open"] || 0, fill: PIE_COLORS[1] },
@@ -146,18 +198,25 @@ export default function Dashboard() {
     { name: "Closed", value: dealStatusCounts?.["Closed"] || 0, fill: PIE_COLORS[4] },
   ].filter(d => d.value > 0);
 
-  // Investor commitment breakdown
+  /**
+   * Aggregates allocations by status for commitment breakdown chart
+   */
   const allocationStatusData = allocations?.reduce((acc, alloc) => {
     const status = alloc.status;
     acc[status] = (acc[status] || 0) + alloc.hardCommitAmount;
     return acc;
   }, {} as Record<string, number>);
 
+  /**
+   * Generates commitment data for pie chart showing allocation status breakdown
+   */
   const commitmentData = Object.entries(allocationStatusData || {})
     .map(([name, value]) => ({ name, value: value / 1000000 }))
     .filter(d => d.value > 0);
 
-  // Project budget burn data
+  /**
+   * Generates project budget data for bar chart showing budget vs actual spend
+   */
   const projectBudgetData = projects?.map(p => ({
     name: p.phase?.slice(0, 15) || "Project",
     budget: p.budgetTotal / 1000000,
@@ -168,7 +227,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Hero Header */}
+      {/* Hero Header with Portfolio Summary */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-background border p-6">
         <div className="relative z-10">
           <div className="flex items-center justify-between">

@@ -1,3 +1,24 @@
+/**
+ * CapitalOps Deals Pipeline Page
+ * 
+ * Purpose: Manages the capital raising deal pipeline with investor matching, funding tracking,
+ * and allocation management for real estate development projects.
+ * 
+ * Approach:
+ * - Comprehensive deal listing with filtering and view toggles (cards/list)
+ * - Investor matching algorithm based on risk tolerance, check size, and asset preferences
+ * - Circular progress indicators showing capital raised vs target
+ * - Full CRUD operations for deal management
+ * - Deal card and list views with different information density
+ * 
+ * Key Features:
+ * - Deal pipeline visualization with funding progress
+ * - Investor matching based on criteria (risk tolerance, check size, asset preference)
+ * - Allocation viewing showing which investors have committed
+ * - Toggle between card and list views for different use cases
+ * - Stat cards showing total capital required, raised, and active deals
+ */
+
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Handshake, TrendingUp, Clock, Plus, Trash2, Pencil, Users, CheckCircle2, LayoutGrid, List, Building2 } from "lucide-react";
@@ -26,23 +47,46 @@ const emptyForm = {
   duration: "", riskLevel: "Medium", complexity: "Moderate", phase: "", status: "Draft",
 };
 
+/**
+ * Matches investors to deals based on multiple criteria
+ * Filters investors by active status and checks:
+ * 1. Check size alignment (deal falls within investor's min/max range)
+ * 2. Risk tolerance compatibility
+ * 3. Asset type preference matching
+ * 
+ * @param deal - Deal object to match investors to
+ * @param investors - Array of all investors to filter
+ * @param asset - Optional asset associated with the deal for more specific matching
+ * @returns Array of matched investors that meet the criteria
+ */
 function getMatchedInvestors(deal: Deal, investors: Investor[], asset?: Asset): Investor[] {
   return investors.filter((inv) => {
     if (inv.status !== "Active") return false;
+    
+    // Check if deal capital falls within investor's check size range
     const withinCheck = deal.capitalRequired >= inv.checkSizeMin && deal.capitalRequired <= inv.checkSizeMax;
+    
+    // Risk tolerance matching logic
     const riskMatch =
       (inv.riskTolerance === "Conservative" && deal.riskLevel === "Low") ||
       (inv.riskTolerance === "Moderate" && (deal.riskLevel === "Low" || deal.riskLevel === "Medium")) ||
       inv.riskTolerance === "Aggressive";
+    
+    // Asset preference matching (bidirectional check)
     const assetMatch =
       !asset ||
       !inv.assetPreference ||
       inv.assetPreference.toLowerCase().includes(asset.assetType.toLowerCase()) ||
       asset.assetType.toLowerCase().includes(inv.assetPreference.toLowerCase());
+    
     return (withinCheck || riskMatch) && assetMatch;
   });
 }
 
+/**
+ * Main Deals page component
+ * Handles all deal CRUD operations and displays deal pipeline dashboard
+ */
 export default function Deals() {
   const { data: deals, isLoading } = useQuery<Deal[]>({ queryKey: ["/api/deals"] });
   const { data: projects } = useQuery<Project[]>({ queryKey: ["/api/projects"] });
@@ -58,14 +102,26 @@ export default function Deals() {
   const [viewMode, setViewMode] = useState<"list" | "cards">("cards");
   const [form, setForm] = useState(emptyForm);
 
+  /**
+   * Sets a field value in the form state
+   * @param key - Form field key
+   * @param value - New value for the field
+   */
   const setField = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
 
+  /**
+   * Opens dialog for creating new deal
+   */
   const openCreate = () => {
     setEditing(null);
     setForm(emptyForm);
     setOpen(true);
   };
 
+  /**
+   * Opens dialog for editing existing deal
+   * @param deal - Deal object to edit
+   */
   const openEdit = (deal: Deal) => {
     setEditing(deal);
     setForm({
@@ -82,12 +138,19 @@ export default function Deals() {
     setOpen(true);
   };
 
+  /**
+   * Closes dialog and resets all form state
+   */
   const closeDialog = () => {
     setOpen(false);
     setEditing(null);
     setForm(emptyForm);
   };
 
+  /**
+   * Mutation for creating new deals
+   * Invalidates queries after success to refresh data
+   */
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
       const res = await apiRequest("POST", "/api/deals", data);
@@ -104,6 +167,10 @@ export default function Deals() {
     },
   });
 
+  /**
+   * Mutation for updating existing deals
+   * Invalidates queries after success to refresh data
+   */
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
       const res = await apiRequest("PUT", `/api/deals/${id}`, data);
@@ -120,6 +187,10 @@ export default function Deals() {
     },
   });
 
+  /**
+   * Mutation for deleting deals
+   * Invalidates queries after success to refresh data
+   */
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/deals/${id}`); },
     onSuccess: () => {
@@ -132,6 +203,10 @@ export default function Deals() {
     },
   });
 
+  /**
+   * Handles form submission for both create and edit operations
+   * @param e - Form submit event
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
@@ -147,14 +222,22 @@ export default function Deals() {
     }
   };
 
+  /**
+   * Toggles expanded state for matched investors display
+   * @param dealId - ID of the deal whose investor matches to toggle
+   */
   const toggleMatches = (dealId: string) => {
     setExpandedMatches(prev => {
       const next = new Set(prev);
-      if (next.has(dealId)) next.delete(dealId); else next.add(dealId);
+      if (next.has(dealId)) next.delete(dealId);
+      else next.add(dealId);
       return next;
     });
   };
 
+  /**
+   * Shows skeleton loader while data is loading
+   */
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -166,6 +249,9 @@ export default function Deals() {
     );
   }
 
+  /**
+   * Calculates portfolio statistics
+   */
   const totalRequired = deals?.reduce((sum, d) => sum + d.capitalRequired, 0) || 0;
   const totalRaised = deals?.reduce((sum, d) => sum + d.capitalRaised, 0) || 0;
 
@@ -205,6 +291,10 @@ export default function Deals() {
       </div>
 
       {viewMode === "cards" ? (
+        /**
+         * Card view: Shows deals in responsive grid with DealCard component
+         * Each card shows funding progress, financial details, and matched investors
+         */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {deals?.map((deal) => {
             const project = projects?.find(p => p.id === deal.projectId);
@@ -227,159 +317,163 @@ export default function Deals() {
           })}
         </div>
       ) : (
-      <div className="space-y-4">
-        {deals?.map((deal) => {
-          const project = projects?.find(p => p.id === deal.projectId);
-          const asset = project ? assets?.find(a => a.id === project.assetId) : undefined;
-          const dealAllocations = allocations?.filter(a => a.dealId === deal.id) || [];
-          const progress = deal.capitalRequired > 0 ? Math.round((deal.capitalRaised / deal.capitalRequired) * 100) : 0;
-          const allocatedInvestorIds = new Set(dealAllocations.map(a => a.investorId));
-          const matched = investors ? getMatchedInvestors(deal, investors, asset) : [];
-          const unallocatedMatches = matched.filter(inv => !allocatedInvestorIds.has(inv.id));
-          const showMatches = expandedMatches.has(deal.id);
+        /**
+         * List view: Shows detailed deal list with expanded allocation and investor matching
+         * Each row shows full deal information, allocations, and matched investors section
+         */
+        <div className="space-y-4">
+          {deals?.map((deal) => {
+            const project = projects?.find(p => p.id === deal.projectId);
+            const asset = project ? assets?.find(a => a.id === project.assetId) : undefined;
+            const dealAllocations = allocations?.filter(a => a.dealId === deal.id) || [];
+            const progress = deal.capitalRequired > 0 ? Math.round((deal.capitalRaised / deal.capitalRequired) * 100) : 0;
+            const allocatedInvestorIds = new Set(dealAllocations.map(a => a.investorId));
+            const matched = investors ? getMatchedInvestors(deal, investors, asset) : [];
+            const unallocatedMatches = matched.filter(inv => !allocatedInvestorIds.has(inv.id));
+            const showMatches = expandedMatches.has(deal.id);
 
-          return (
-            <Card key={deal.id} data-testid={`card-deal-${deal.id}`}>
-              <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                    <Handshake className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <CardTitle className="text-base truncate">{(deal as any).projectName || asset?.name || "Unknown"} — {deal.phase}</CardTitle>
-                    <p className="text-xs text-muted-foreground">{asset?.location || ""}{asset?.location ? " | " : ""}{deal.returnProfile}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge variant="secondary" className={getStatusColor(deal.status)}>{deal.status}</Badge>
-                  <Badge variant="secondary" className={getStatusColor(deal.riskLevel)}>{deal.riskLevel} Risk</Badge>
-                  {user && (
-                    <>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(deal)} aria-label="Edit deal" data-testid={`button-edit-deal-${deal.id}`}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" data-testid={`button-delete-deal-${deal.id}`} aria-label="Delete deal">
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete this deal?</AlertDialogTitle>
-                            <AlertDialogDescription>This will remove the deal and cannot be undone.</AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteMutation.mutate(deal.id)} data-testid="button-confirm-delete">Delete</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                  <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Required</p>
-                    <p className="text-sm font-semibold">{formatCurrency(deal.capitalRequired)}</p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Raised</p>
-                    <p className="text-sm font-semibold text-chart-2">{formatCurrency(deal.capitalRaised)}</p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Duration</p>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3 text-muted-foreground" />
-                      <p className="text-sm font-medium">{deal.duration}</p>
+            return (
+              <Card key={deal.id} data-testid={`card-deal-${deal.id}`}>
+                <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
+                      <Handshake className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <CardTitle className="text-base truncate">{(deal as any).projectName || asset?.name || "Unknown"} — {deal.phase}</CardTitle>
+                      <p className="text-xs text-muted-foreground">{asset?.location || ""}{asset?.location ? " | " : ""}{deal.returnProfile}</p>
                     </div>
                   </div>
-                  <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Complexity</p>
-                    <p className="text-sm font-medium">{deal.complexity}</p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Investors</p>
-                    <p className="text-sm font-medium">{dealAllocations.length}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="text-muted-foreground">Capital Progress</span>
-                    <span className="font-medium">{progress}%</span>
-                  </div>
-                  <Progress value={progress} className="h-2" />
-                </div>
-
-                {dealAllocations.length > 0 && (
-                  <div className="pt-3 border-t border-border">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Allocations</p>
-                    <div className="space-y-2">
-                      {dealAllocations.map((alloc) => {
-                        const investor = investors?.find(i => i.id === alloc.investorId);
-                        return (
-                          <div key={alloc.id} className="flex items-center justify-between gap-3 p-2 rounded-md bg-accent/30" data-testid={`deal-allocation-${alloc.id}`}>
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium truncate">{investor?.name || "Unknown"}</p>
-                              <p className="text-[10px] text-muted-foreground">
-                                Soft: {formatCurrency(alloc.softCommitAmount)} | Hard: {formatCurrency(alloc.hardCommitAmount)}
-                              </p>
-                            </div>
-                            <Badge variant="secondary" className={getStatusColor(alloc.status)}>{alloc.status}</Badge>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Matched Investors */}
-                {deal.status !== "Closed" && deal.status !== "Funded" && (
-                  <div className="pt-3 border-t border-border">
-                    <button
-                      type="button"
-                      className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
-                      onClick={() => toggleMatches(deal.id)}
-                      data-testid={`button-toggle-matches-${deal.id}`}
-                    >
-                      <Users className="h-3 w-3" />
-                      {unallocatedMatches.length} Matched Investor{unallocatedMatches.length !== 1 ? "s" : ""} Available
-                      <span className="text-primary">{showMatches ? "▲ Hide" : "▼ Show"}</span>
-                    </button>
-                    {showMatches && (
-                      <div className="mt-2 space-y-2">
-                        {unallocatedMatches.length === 0 ? (
-                          <p className="text-xs text-muted-foreground">No unallocated matching investors found.</p>
-                        ) : (
-                          unallocatedMatches.map((inv) => (
-                            <div key={inv.id} className="flex items-center justify-between gap-3 p-2 rounded-md bg-chart-2/10 border border-chart-2/20" data-testid={`match-investor-${inv.id}`}>
-                              <div className="flex items-center gap-2 min-w-0">
-                                <CheckCircle2 className="h-3.5 w-3.5 text-chart-2 shrink-0" />
-                                <div className="min-w-0">
-                                  <p className="text-sm font-medium truncate">{inv.name}</p>
-                                  <p className="text-[10px] text-muted-foreground">
-                                    {formatCurrency(inv.checkSizeMin)}–{formatCurrency(inv.checkSizeMax)} | {inv.riskTolerance} | {inv.tierLevel}
-                                  </p>
-                                </div>
-                              </div>
-                              <Badge variant="secondary" className={inv.tierLevel === "Tier 2" ? "bg-chart-4/15 text-chart-4" : "bg-accent text-accent-foreground"}>
-                                {inv.tierLevel}
-                              </Badge>
-                            </div>
-                          ))
-                        )}
-                      </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge variant="secondary" className={getStatusColor(deal.status)}>{deal.status}</Badge>
+                    <Badge variant="secondary" className={getStatusColor(deal.riskLevel)}>{deal.riskLevel} Risk</Badge>
+                    {user && (
+                      <>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(deal)} aria-label="Edit deal" data-testid={`button-edit-deal-${deal.id}`}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" data-testid={`button-delete-deal-${deal.id}`} aria-label="Delete deal">
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete this deal?</AlertDialogTitle>
+                              <AlertDialogDescription>This will remove the deal and cannot be undone.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(deal.id)} data-testid="button-confirm-delete">Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </>
                     )}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Required</p>
+                      <p className="text-sm font-semibold">{formatCurrency(deal.capitalRequired)}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Raised</p>
+                      <p className="text-sm font-semibold text-chart-2">{formatCurrency(deal.capitalRaised)}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Duration</p>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                        <p className="text-sm font-medium">{deal.duration}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Complexity</p>
+                      <p className="text-sm font-medium">{deal.complexity}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Investors</p>
+                      <p className="text-sm font-medium">{dealAllocations.length}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <span className="text-muted-foreground">Capital Progress</span>
+                      <span className="font-medium">{progress}%</span>
+                    </div>
+                    <Progress value={progress} className="h-2" />
+                  </div>
+
+                  {dealAllocations.length > 0 && (
+                    <div className="pt-3 border-t border-border">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Allocations</p>
+                      <div className="space-y-2">
+                        {dealAllocations.map((alloc) => {
+                          const investor = investors?.find(i => i.id === alloc.investorId);
+                          return (
+                            <div key={alloc.id} className="flex items-center justify-between gap-3 p-2 rounded-md bg-accent/30" data-testid={`deal-allocation-${alloc.id}`}>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium truncate">{investor?.name || "Unknown"}</p>
+                                <p className="text-[10px] text-muted-foreground">
+                                  Soft: {formatCurrency(alloc.softCommitAmount)} | Hard: {formatCurrency(alloc.hardCommitAmount)}
+                                </p>
+                              </div>
+                              <Badge variant="secondary" className={getStatusColor(alloc.status)}>{alloc.status}</Badge>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Matched Investors Section - Expandable */}
+                  {deal.status !== "Closed" && deal.status !== "Funded" && (
+                    <div className="pt-3 border-t border-border">
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                        onClick={() => toggleMatches(deal.id)}
+                        data-testid={`button-toggle-matches-${deal.id}`}
+                      >
+                        <Users className="h-3 w-3" />
+                        {unallocatedMatches.length} Matched Investor{unallocatedMatches.length !== 1 ? "s" : ""} Available
+                        <span className="text-primary">{showMatches ? "▲ Hide" : "▼ Show"}</span>
+                      </button>
+                      {showMatches && (
+                        <div className="mt-2 space-y-2">
+                          {unallocatedMatches.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">No unallocated matching investors found.</p>
+                          ) : (
+                            unallocatedMatches.map((inv) => (
+                              <div key={inv.id} className="flex items-center justify-between gap-3 p-2 rounded-md bg-chart-2/10 border border-chart-2/20" data-testid={`match-investor-${inv.id}`}>
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-chart-2 shrink-0" />
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium truncate">{inv.name}</p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                      {formatCurrency(inv.checkSizeMin)}–{formatCurrency(inv.checkSizeMax)} | {inv.riskTolerance} | {inv.tierLevel}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Badge variant="secondary" className={inv.tierLevel === "Tier 2" ? "bg-chart-4/15 text-chart-4" : "bg-accent text-accent-foreground"}>
+                                  {inv.tierLevel}
+                                </Badge>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) closeDialog(); else setOpen(true); }}>

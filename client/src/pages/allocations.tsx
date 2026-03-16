@@ -1,3 +1,22 @@
+/**
+ * CapitalOps Allocations Page
+ * 
+ * Purpose: Manages investor capital allocation tracking throughout the investment lifecycle,
+ * shows commitment pipeline from pending to funded stages.
+ * 
+ * Approach:
+ * - Uses state machine pattern for allocation status flow (Pending → Approved → Soft Commit → Hard Commit → Funded)
+ * - Pipeline visualization showing each stage's volume and count
+ * - Single-page layout with stat cards showing totals
+ * - Full CRUD operations with dialog forms
+ * 
+ * Key Features:
+ * - Commitment pipeline with 5-stage workflow visualization
+ * - Allocation list showing investor, deal, amounts, and status
+ * - Quick status advancement buttons (e.g., "Hard Commit → Funded")
+ * -_stat cards: total soft commits, hard commits, and funded allocations
+ */
+
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { TrendingUp, DollarSign, Users, Plus, Trash2, Pencil, ArrowRight, CheckCircle2 } from "lucide-react";
@@ -20,8 +39,17 @@ import { useAuth } from "@/hooks/use-auth";
 import type { Allocation, Investor, Deal, Project, Asset } from "@shared/schema";
 
 const emptyForm = { investorId: "", dealId: "", softCommitAmount: "", hardCommitAmount: "0", status: "Pending", notes: "" };
+
+/**
+ * Defines the allocation status workflow as a state machine
+ * Investors progress through these stages: Pending → Approved → Soft Commit → Hard Commit → Funded
+ * Can also be declined or withdrawn
+ */
 const STATUS_FLOW = ["Pending", "Approved", "Soft Commit", "Hard Commit", "Funded", "Declined", "Withdrawn"];
 
+/**
+ * Maps status to corresponding icon for pipeline visualization
+ */
 const STATUS_ICONS: Record<string, typeof TrendingUp> = {
   Pending: Users,
   Approved: CheckCircle2,
@@ -30,6 +58,9 @@ const STATUS_ICONS: Record<string, typeof TrendingUp> = {
   Funded: CheckCircle2,
 };
 
+/**
+ * Defines gradient colors for each pipeline stage in the visualization
+ */
 const PIPELINE_COLORS = [
   "from-muted/60 to-muted/30 text-muted-foreground",
   "from-chart-1/30 to-chart-1/10 text-chart-1",
@@ -38,6 +69,10 @@ const PIPELINE_COLORS = [
   "from-chart-2/30 to-chart-2/10 text-chart-2",
 ];
 
+/**
+ * Main Allocations page component
+ * Handles all allocation CRUD and pipeline visualization
+ */
 export default function Allocations() {
   const { data: allocations, isLoading } = useQuery<Allocation[]>({ queryKey: ["/api/allocations"] });
   const { data: investors } = useQuery<Investor[]>({ queryKey: ["/api/investors"] });
@@ -51,33 +86,67 @@ export default function Allocations() {
   const [editing, setEditing] = useState<Allocation | null>(null);
   const [form, setForm] = useState(emptyForm);
 
+  /**
+   * Sets a field value in the form state
+   * @param key - Form field key
+   * @param value - New value for the field
+   */
   const setField = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
+  
+  /**
+   * Opens dialog for creating new allocation
+   */
   const openCreate = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
+  
+  /**
+   * Opens dialog for editing existing allocation
+   * @param alloc - Allocation object to edit
+   */
   const openEdit = (alloc: Allocation) => {
     setEditing(alloc);
     setForm({ investorId: alloc.investorId, dealId: alloc.dealId, softCommitAmount: String(alloc.softCommitAmount), hardCommitAmount: String(alloc.hardCommitAmount), status: alloc.status, notes: alloc.notes || "" });
     setOpen(true);
   };
+  
+  /**
+   * Closes dialog and resets all form state
+   */
   const closeDialog = () => { setOpen(false); setEditing(null); setForm(emptyForm); };
 
+  /**
+   * Mutation for creating new allocations
+   * Invalidates queries after success to refresh data
+   */
   const createMutation = useMutation({
     mutationFn: async (data: any) => { const res = await apiRequest("POST", "/api/allocations", data); return res.json(); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/allocations"] }); toast({ title: "Allocation created" }); closeDialog(); },
     onError: (err: Error) => { toast({ title: "Failed to create allocation", description: err.message, variant: "destructive" }); },
   });
 
+  /**
+   * Mutation for updating existing allocations
+   * Invalidates allocations and deals queries after success
+   */
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => { const res = await apiRequest("PUT", `/api/allocations/${id}`, data); return res.json(); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/allocations"] }); queryClient.invalidateQueries({ queryKey: ["/api/deals"] }); toast({ title: "Allocation updated" }); closeDialog(); },
     onError: (err: Error) => { toast({ title: "Failed to update allocation", description: err.message, variant: "destructive" }); },
   });
 
+  /**
+   * Mutation for deleting allocations
+   * Invalidates allocations query after success
+   */
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/allocations/${id}`); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/allocations"] }); toast({ title: "Allocation deleted" }); },
     onError: (err: Error) => { toast({ title: "Failed to delete", description: err.message, variant: "destructive" }); },
   });
 
+  /**
+   * Advances allocation to next status in workflow
+   * @param alloc - Allocation to advance
+   */
   const advanceStatus = (alloc: Allocation) => {
     const idx = STATUS_FLOW.indexOf(alloc.status);
     if (idx < 0 || idx >= STATUS_FLOW.length - 2) return;
@@ -85,12 +154,21 @@ export default function Allocations() {
     updateMutation.mutate({ id: alloc.id, data: { ...alloc, status: nextStatus } });
   };
 
+  /**
+   * Handles form submission for both create and edit operations
+   * @param e - Form submit event
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { ...form, softCommitAmount: Number(form.softCommitAmount) || 0, hardCommitAmount: Number(form.hardCommitAmount) || 0, timestamp: editing?.timestamp || new Date().toISOString() };
     if (editing) { updateMutation.mutate({ id: editing.id, data: payload }); } else { createMutation.mutate(payload); }
   };
 
+  /**
+   * Looks up deal name by ID including asset information
+   * @param dealId - Deal ID to look up
+   * @returns Formatted deal name with asset and phase info
+   */
   const getDealName = (dealId: string) => {
     const deal = deals?.find(d => d.id === dealId);
     if (!deal) return "Unknown Deal";
@@ -99,12 +177,20 @@ export default function Allocations() {
     return (deal as any).projectName || asset?.name || deal.phase || "Unknown Deal";
   };
 
+  /**
+   * Gets the label for the next status in the workflow
+   * @param status - Current status
+   * @returns Next status label or null if at end of workflow
+   */
   const nextStatusLabel = (status: string) => {
     const idx = STATUS_FLOW.indexOf(status);
     if (idx < 0 || idx >= STATUS_FLOW.length - 2) return null;
     return STATUS_FLOW[idx + 1];
   };
 
+  /**
+   * Shows skeleton loader while data is loading
+   */
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -114,10 +200,16 @@ export default function Allocations() {
     );
   }
 
+  /**
+   * Calculates portfolio statistics
+   */
   const totalSoft = allocations?.reduce((sum, a) => sum + a.softCommitAmount, 0) || 0;
   const totalHard = allocations?.reduce((sum, a) => sum + a.hardCommitAmount, 0) || 0;
   const funded = allocations?.filter(a => a.status === "Funded").length || 0;
 
+  /**
+   * Generates pipeline stage data for visualization
+   */
   const pipelineStages = STATUS_FLOW.slice(0, 5).map((status, idx) => ({
     status,
     count: allocations?.filter(a => a.status === status).length || 0,
@@ -125,6 +217,7 @@ export default function Allocations() {
     color: PIPELINE_COLORS[idx] || PIPELINE_COLORS[0],
     Icon: STATUS_ICONS[status] || TrendingUp,
   }));
+  
   const maxPipelineCount = Math.max(...pipelineStages.map(s => s.count), 1);
 
   return (
@@ -143,7 +236,7 @@ export default function Allocations() {
         <StatCard title="Funded Allocations" value={funded} icon={CheckCircle2} variant="highlight" testId="stat-funded" />
       </div>
 
-      {/* Commitment Pipeline */}
+      {/* Commitment Pipeline Visualization */}
       <Card data-testid="allocation-pipeline">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -155,7 +248,7 @@ export default function Allocations() {
           <div className="grid grid-cols-5 gap-2">
             {pipelineStages.map(({ status, count, amount, color, Icon }, idx) => (
               <div key={status} className="relative" data-testid={`pipeline-stage-${status.toLowerCase().replace(/\s+/g, "-")}`}>
-                {/* Connector */}
+                {/* Connector arrow between stages */}
                 {idx < pipelineStages.length - 1 && (
                   <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10">
                     <ArrowRight className="h-3 w-3 text-muted-foreground/40" />
@@ -180,7 +273,7 @@ export default function Allocations() {
         </CardContent>
       </Card>
 
-      {/* Allocation list */}
+      {/* Allocation List */}
       <div className="space-y-3">
         {allocations?.map((alloc) => {
           const investor = investors?.find(i => i.id === alloc.investorId);

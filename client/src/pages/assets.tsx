@@ -1,3 +1,25 @@
+/**
+ * CapitalOps Assets Management Page
+ * 
+ * Purpose: Provides comprehensive asset portfolio management interface for viewing,
+ * creating, editing, and deleting real estate assets with media gallery and location mapping.
+ * 
+ * Approach: 
+ * - Uses TanStack Query for data fetching and caching with automatic refetching
+ * - Implements dialog forms for create/edit operations with validation
+ * - Integrates MediaGallery and AssetLocationMap components for rich asset data
+ * - Provides stat cards showing portfolio summary metrics
+ * - Follows consistent CRUD patterns with mutation invalidation
+ * 
+ * Key Features:
+ * - Asset listing with type-based visual differentiation
+ * - Status badges (Active, Stabilized, Pre-dev)
+ * - Stat cards showing total assets, active count, stabilized count, and total square footage
+ * - Image/video upload with media gallery preview
+ * - Google Maps integration via OpenStreetMap iframe
+ * - Full CRUD operations with confirmation dialogs
+ */
+
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Building2, MapPin, Maximize2, Plus, Trash2, Pencil, Layers, Home, Briefcase, ShoppingBag } from "lucide-react";
@@ -24,6 +46,16 @@ const emptyForm = {
   name: "", location: "", assetType: "", squareFootage: "", status: "Active", assetManager: "",
 };
 
+/**
+ * Maps asset types to corresponding icons and color themes for visual differentiation
+ * 
+ * @param type - Asset type string (e.g., "Mixed-Use", "Multi-Family", "Office")
+ * @returns Object with icon component, gradient CSS classes, and color classes
+ * 
+ * @examples
+ * getAssetMeta("Mixed-Use") -> { icon: Layers, gradient: "...", iconBg: "...", iconColor: "..." }
+ * getAssetMeta("Multi-Family") -> { icon: Home, gradient: "...", iconBg: "...", iconColor: "..." }
+ */
 function getAssetMeta(type: string): { icon: typeof Building2; gradient: string; iconBg: string; iconColor: string } {
   const t = type.toLowerCase();
   if (t.includes("mixed")) return { icon: Layers, gradient: "from-chart-1/20 to-chart-4/10", iconBg: "bg-chart-1/15", iconColor: "text-chart-1" };
@@ -33,6 +65,12 @@ function getAssetMeta(type: string): { icon: typeof Building2; gradient: string;
   return { icon: Building2, gradient: "from-primary/20 to-primary/5", iconBg: "bg-primary/10", iconColor: "text-primary" };
 }
 
+/**
+ * Returns color class for status dot indicator
+ * 
+ * @param status - Asset status string
+ * @returns Tailwind CSS color class for the status dot
+ */
 function getStatusDot(status: string) {
   if (status === "Active") return "bg-chart-2";
   if (status === "Stabilized") return "bg-chart-1";
@@ -40,6 +78,10 @@ function getStatusDot(status: string) {
   return "bg-muted-foreground";
 }
 
+/**
+ * Main Assets page component
+ * Handles all asset CRUD operations and displays asset portfolio dashboard
+ */
 export default function Assets() {
   const { data: assets, isLoading } = useQuery<Asset[]>({ queryKey: ["/api/assets"] });
   const { user } = useAuth();
@@ -51,8 +93,23 @@ export default function Assets() {
   const [location, setLocation] = useState<{ address: string; lat: number; lng: number } | undefined>(undefined);
   const [mediaPreviews, setMediaPreviews] = useState<{ url: string; type: "image" | "video"; name: string }[]>([]);
 
+  /**
+   * Sets a field value in the form state
+   * @param key - Form field key
+   * @param value - New value for the field
+   */
   const setField = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
+  
+  /**
+   * Opens dialog for creating new asset
+   * Resets form state and clears any existing data
+   */
   const openCreate = () => { setEditing(null); setForm(emptyForm); setLocation(undefined); setMediaPreviews([]); setOpen(true); };
+  
+  /**
+   * Opens dialog for editing existing asset
+   * @param asset - Asset object to edit
+   */
   const openEdit = (asset: Asset) => {
     setEditing(asset);
     setForm({ name: asset.name, location: asset.location, assetType: asset.assetType, squareFootage: String(asset.squareFootage), status: asset.status, assetManager: asset.assetManager });
@@ -60,32 +117,57 @@ export default function Assets() {
     setMediaPreviews([]);
     setOpen(true);
   };
+  
+  /**
+   * Closes dialog and resets all form state
+   */
   const closeDialog = () => { setOpen(false); setEditing(null); setForm(emptyForm); setLocation(undefined); setMediaPreviews([]); };
 
+  /**
+   * Mutation for creating new assets
+   * Invalidates queries after success to refresh data
+   */
   const createMutation = useMutation({
     mutationFn: async (data: any) => { const res = await apiRequest("POST", "/api/assets", data); return res.json(); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/assets"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Asset created" }); closeDialog(); },
     onError: (err: Error) => { toast({ title: "Failed to create asset", description: err.message, variant: "destructive" }); },
   });
 
+  /**
+   * Mutation for updating existing assets
+   * Invalidates queries after success to refresh data
+   */
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => { const res = await apiRequest("PUT", `/api/assets/${id}`, data); return res.json(); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/assets"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Asset updated" }); closeDialog(); },
     onError: (err: Error) => { toast({ title: "Failed to update asset", description: err.message, variant: "destructive" }); },
   });
 
+  /**
+   * Mutation for deleting assets
+   * Invalidates queries after success to refresh data
+   */
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/assets/${id}`); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/assets"] }); queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] }); toast({ title: "Asset deleted" }); },
     onError: (err: Error) => { toast({ title: "Failed to delete asset", description: err.message, variant: "destructive" }); },
   });
 
+  /**
+   * Handles form submission for both create and edit operations
+   * @param e - Form submit event
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { ...form, portfolioId: "port-001", squareFootage: Number(form.squareFootage) || 0, location: location || undefined };
     if (editing) { updateMutation.mutate({ id: editing.id, data: payload }); } else { createMutation.mutate(payload); }
   };
 
+  /**
+   * Handles media upload from file input
+   * Creates object URLs for preview before actual upload
+   * @param files - FileList from input element
+   */
   const handleMediaUpload = async (files: FileList) => {
     const newPreviews: { url: string; type: "image" | "video"; name: string }[] = [];
     for (let i = 0; i < files.length; i++) {
@@ -98,10 +180,17 @@ export default function Assets() {
     setMediaPreviews((prev) => [...prev, ...newPreviews]);
   };
 
+  /**
+   * Removes media from preview list
+   * @param urlToRemove - Object URL to remove from previews
+   */
   const handleRemoveMedia = (urlToRemove: string) => {
     setMediaPreviews((prev) => prev.filter((p) => p.url !== urlToRemove));
   };
 
+  /**
+   * Shows skeleton loader while data is loading
+   */
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -113,6 +202,9 @@ export default function Assets() {
     );
   }
 
+  /**
+   * Calculates portfolio statistics for stat cards
+   */
   const active = assets?.filter(a => a.status === "Active").length || 0;
   const stabilized = assets?.filter(a => a.status === "Stabilized").length || 0;
   const totalSqFt = assets?.reduce((sum, a) => sum + a.squareFootage, 0) || 0;
