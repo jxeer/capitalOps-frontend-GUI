@@ -150,6 +150,8 @@ export const userSchema = z.object({
   googleId: z.string().optional(),
   email: z.string().optional(),
   profileImage: z.string().optional(),
+  profileType: z.enum(["investor", "vendor", "developer"]).optional(),
+  profileStatus: z.enum(["active", "inactive", "pending", "suspended"]).default("pending"),
 });
 export type User = z.infer<typeof userSchema>;
 export const insertUserSchema = userSchema.omit({ id: true });

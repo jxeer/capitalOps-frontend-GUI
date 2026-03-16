@@ -189,6 +189,8 @@ export function setupAuth(app: Express) {
                 email,
                 profileImage: profile.photos?.[0]?.value,
                 role: "viewer",
+                profileType: "investor",
+                profileStatus: "active",
               });
             }
             return done(null, { id: user.id, username: user.username, role: user.role });
