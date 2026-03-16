@@ -314,19 +314,104 @@ Your backend needs to provide a POST /upload endpoint that accepts multipart/for
 - Build system: Vite for client, Express for server (serverless compatible)
 
 ---
+**Current Status:** Uploading profile images works but images are not persisted
+
+**What Works:**
+- ✅ Upload API endpoint working through Express proxy → Flask backend
+- ✅ CORS headers configured for localhost:3000
+- ✅ Frontend `s3.ts` file properly configured with env variables
+- ✅ Upload returns URL and key from Flask backend
+
+**What's Not Working:**
+- ❌ Images not persisting permanently - Flask backend returns mock URLs (e.g., `http://localhost:3001/uploads/xxx.png`)
+- ❌ Backend doesn't actually save files to disk
+- ❌ Profile images stored in database? Need to verify
+- ❌ User avatar in header doesn't update when profile image changes
+
+**Next Steps:**
+
+**Step 1: Fix Image Persistence**
+1. Determine where profile images should be stored (disk vs database)
+2. Implement file storage in Flask backend:
+   - Option A: Save to `app/uploads/` directory with unique filenames
+   - Option B: Store binary data in SQLite database (BLOB)
+   - Option C: Set up actual AWS S3 bucket for production
+3. Update Flask `/api/upload` endpoint to actually save files
+4. Configure Flask to serve static files from upload directory
+5. Test image upload persists across server restarts
+
+**Step 2: Update User Profile in Database**
+1. When image uploads, update user's `profileImage` field in database
+2. Ensure `GET /api/user` endpoint returns updated profile image URL
+3. Test profile page displays correct image after upload
+
+**Step 3: Update Header Avatar**
+1. Profile image upload should update user store/state
+2. Header/UserMenu component should re-render with new avatar
+3. Check if profile image URL is being stored in AuthUser context
+
+**Step 4: Move to Phase 5 - Vendor Ranking (Post-MVP)**
+1. Vendor performance tracking and scoring
+2. Rating system for vendors
+3. Ranking based on various metrics
+4. Vendor comparison tools
+
+---
+
+## Current Configuration
+
+### Frontend `.env` (`client/.env`):
+```env
+BACKEND_URL=http://localhost:3001
+VITE_AWS_BUCKET_URL=/api
+VITE_COMPAT_API_KEY=change-me-in-production
+SESSION_SECRET=change-me-in-production
+```
+
+### Backend `.env` (`backend/.env`):
+```env
+DATABASE_URL=sqlite:///capitalops.db
+COMPAT_API_KEY=change-me-in-production
+# AWS_ACCESS_KEY_ID=your-aws-access-key-id
+# AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
+# AWS_BUCKET_NAME=capitalops-images  # Commented for local dev
+AWS_REGION=us-east-1
+```
+
+---
+
+## Next Development Phase: Phase 5 - Vendor Ranking (Post-MVP)
+
+**Status:** Not Started  
+**Priority:** Low (After Phase 4 completion)
+
+**Planned Features:**
+- Vendor performance tracking and scoring
+- Rating system for vendors
+- Ranking based on various metrics
+- Vendor comparison tools
+
+---
 
 ## Project Dates
+| Date | Commit | Description |
+|------|--------|-------------|
+| 2026-03-16 | today | Phase 4 implementation (profile enhancements, connection system, S3 upload setup) |
+| 2026-03-16 | today | Phase 4 profile image upload FIXED - CORS and multipart proxy to Flask backend |
+
+---
+
+## Implementation Phases Detail
+
+### Phase 1 - Profile Management ✅ COMPLETE
 | Date | Commit | Description |
 |------|--------|-------------|
 | 2026-03-16 | today | Phase 4 implementation (profile enhancements, connection system, S3 upload setup) |
 
 | 2026-03-16 | today | Phase 4 profile image upload FIXED - CORS and multipart proxy to Flask backend |
 
-## Implementation Phases Detail
 
-### Phase 1 - Profile Management ✅ COMPLETE
 
-### Session Progress Log
 
 **Profile Image Upload Implementation - FIXED ✅**
 
@@ -378,7 +463,6 @@ Your backend needs to provide a POST /upload endpoint that accepts multipart/for
 - Vite on port 3000 (via tsx)
 
 **Current Issue:**
-Frontend `.env` file has `VITE_AWS_BUCKET_URL=http://localhost:3001` but the frontend is not loading it correctly. The browser console shows "AWS S3 bucket URL not configured" even though the file contains the correct value.
 
 **Possible Causes:**
 1. Frontend server needs full restart (not just hot-reload)
@@ -392,7 +476,6 @@ Frontend `.env` file has `VITE_AWS_BUCKET_URL=http://localhost:3001` but the fro
 - Frontend on port 3000 (Vite dev server via tsx)
 
 **Current Issue:**
-Frontend `.env` file has `VITE_AWS_BUCKET_URL=http://localhost:3001` but the frontend is not loading it correctly. The browser console shows "AWS S3 bucket URL not configured" even though the file contains the correct value.
 
 **Possible Causes:**
 1. Frontend server needs full restart (not just hot-reload)
@@ -402,9 +485,7 @@ Frontend `.env` file has `VITE_AWS_BUCKET_URL=http://localhost:3001` but the fro
 
 ---
 
-## Backend Setup Instructions (For Reference)
 
-### Backend Requirements (Local Development)
 
 **Python 3.11+ with pip installed**
 
@@ -423,7 +504,6 @@ cp .env.example .env
 /opt/homebrew/Frameworks/Python.framework/Versions/3.11/bin/python3.11 -m flask run --host 0.0.0.0 --port 3001
 ```
 
-### Frontend Requirements
 
 **Node.js 20+ with npm installed**
 
@@ -437,9 +517,7 @@ npm run dev
 
 ---
 
-## Current Configuration
 
-### Frontend `.env` (`/Users/julianxeer/dev/work/freelance/capitalops/frontend/.env`):
 ```env
 BACKEND_URL=http://localhost:3001
 COMPAT_API_KEY=change-me-in-production
@@ -447,7 +525,6 @@ SESSION_SECRET=change-me-in-production
 VITE_AWS_BUCKET_URL=http://localhost:3001
 ```
 
-### Backend `.env` (`/Users/julianxeer/dev/work/freelance/capitalops/backend/.env`):
 ```env
 DATABASE_URL=sqlite:///capitalops.db
 COMPAT_API_KEY=change-me-in-production
@@ -459,7 +536,6 @@ AWS_REGION=us-east-1
 
 ---
 
-## Coral8 Integration (Post-MVP)
 
 **Status:** Not Started  
 **Priority:** Medium (After Phase 4 completion)
@@ -484,17 +560,56 @@ AWS_REGION=us-east-1
 - Frontend on port 3000 (Vite dev server via tsx)
 
 **Current Issue:**
-Frontend `.env` file has `VITE_AWS_BUCKET_URL=http://localhost:3001` but the frontend is not loading it correctly. The browser console shows "AWS S3 bucket URL not configured" even though the file contains the correct value.
+**Status:** Uploading profile images works but images are not persisted
 
-**Possible Causes:**
+**What Works:**
+- ✅ Upload API endpoint working through Express proxy → Flask backend
+- ✅ CORS headers configured for localhost:3000
+- ✅ Frontend `s3.ts` file properly configured with env variables
+- ✅ Upload returns URL and key from Flask backend
+
+**What's Not Working:**
+- ❌ Images not persisting permanently - Flask backend returns mock URLs (e.g., `http://localhost:3001/uploads/xxx.png`)
+- ❌ Backend doesn't actually save files to disk
+- ❌ Profile images stored in database? Need to verify
+- ❌ User avatar in header doesn't update when profile image changes
+
+**Next Steps:**
+
+**Step 1: Fix Image Persistence**
+1. Determine where profile images should be stored (disk vs database)
+2. Implement file storage in Flask backend:
+   - Option A: Save to `app/uploads/` directory with unique filenames
+   - Option B: Store binary data in SQLite database (BLOB)
+   - Option C: Set up actual AWS S3 bucket for production
+3. Update Flask `/api/upload` endpoint to actually save files
+4. Configure Flask to serve static files from upload directory
+5. Test image upload persists across server restarts
+
+**Step 2: Update User Profile in Database**
+1. When image uploads, update user's `profileImage` field in database
+2. Ensure `GET /api/user` endpoint returns updated profile image URL
+3. Test profile page displays correct image after upload
+
+**Step 3: Update Header Avatar**
+1. Profile image upload should update user store/state
+2. Header/UserMenu component should re-render with new avatar
+3. Check if profile image URL is being stored in AuthUser context
+
+**Step 4: Move to Phase 5 - Vendor Ranking (Post-MVP)**
+1. Vendor performance tracking and scoring
+2. Rating system for vendors
+3. Ranking based on various metrics
+4. Vendor comparison tools
+
+---
+
 1. Frontend server needs full restart (not just hot-reload)
 2. `.env` file location issue
 3. Vite caching issue
 4. Frontend is running but not re-reading `.env`
 
----
 
-## Project Dates
 | Date | Commit | Description |
 |------|--------|-------------|
 | 2026-03-16 | today | Phase 4 implementation (profile enhancements, connection system, S3 upload setup) |
