@@ -536,5 +536,198 @@ export async function registerRoutes(
     });
   });
 
+  // Connection Request Routes
+  app.get("/api/connection-requests", requireAuth, async (req, res) => {
+    const user = getUserFromRequest(req);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const requests = await storage.getConnectionRequestsByUserId(user.id);
+      res.json(requests);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch connection requests" });
+    }
+  });
+
+  app.post("/api/connection-requests", requireAuth, async (req, res) => {
+    const user = getUserFromRequest(req);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const { receiverId, message } = req.body;
+      if (!receiverId) return res.status(400).json({ message: "Receiver ID is required" });
+      
+      const existing = await storage.getConnectionRequestsByUserId(user.id).then(reqs => 
+        reqs.find(r => 
+          (r.senderId === user.id && r.receiverId === receiverId) ||
+          (r.senderId === receiverId && r.receiverId === user.id)
+        )
+      );
+      if (existing && existing.status === "pending") {
+        return res.status(400).json({ message: "Connection request already exists" });
+      }
+      
+      const request = await storage.createConnectionRequest({
+        senderId: user.id,
+        receiverId,
+        message,
+      });
+      res.status(201).json(request);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to create connection request" });
+    }
+  });
+
+  app.put("/api/connection-requests/:id", requireAuth, async (req, res) => {
+    const user = getUserFromRequest(req);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const { status } = req.body;
+      if (status !== "accepted" && status !== "declined") {
+        return res.status(400).json({ message: "Status must be 'accepted' or 'declined'" });
+      }
+      
+      const request = await storage.getConnectionRequestById(req.params["id"] as string);
+      if (!request) return res.status(404).json({ message: "Connection request not found" });
+      if (request.receiverId !== user.id) return res.status(403).json({ message: "Only the receiver can respond" });
+      
+      const updated = await storage.updateConnectionRequest(req.params["id"] as string, status);
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to update connection request" });
+    }
+  });
+
+  app.delete("/api/connection-requests/:id", requireAuth, async (req, res) => {
+    const user = getUserFromRequest(req);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const request = await storage.getConnectionRequestById(req.params["id"] as string);
+      if (!request) return res.status(404).json({ message: "Connection request not found" });
+      if (request.senderId !== user.id && request.receiverId !== user.id) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const deleted = await storage.deleteConnectionRequest(req.params["id"] as string);
+      if (!deleted) return res.status(404).json({ message: "Connection request not found" });
+      res.json({ message: "Deleted" });
+    } catch (err) {
+      res.status(500).json({ message: "Failed to delete connection request" });
+    }
+  });
+
+  app.get("/api/connections", requireAuth, async (req, res) => {
+    const user = getUserFromRequest(req);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const connectedUsers = await storage.getConnectedUsers(user.id);
+      res.json(connectedUsers);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch connections" });
+    }
+  });
+
+  app.get("/api/connection-pending", requireAuth, async (req, res) => {
+    const user = getUserFromRequest(req);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const pendingRequests = await storage.getPendingConnectionRequests(user.id);
+      res.json(pendingRequests);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch pending requests" });
+    }
+  });
+
+  // Conversation Routes
+  app.get("/api/conversations", requireAuth, async (req, res) => {
+    const user = getUserFromRequest(req);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const conversations = await storage.getConversationsForUser(user.id);
+      res.json(conversations);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  app.post("/api/conversations", requireAuth, async (req, res) => {
+    const user = getUserFromRequest(req);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const { otherUserId } = req.body;
+      if (!otherUserId) return res.status(400).json({ message: "Other user ID is required" });
+      
+      const conversation = await storage.getOrCreateConversation(user.id, otherUserId);
+      res.status(201).json(conversation);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to create conversation" });
+    }
+  });
+
+  // Message Routes
+  app.get("/api/messages", requireAuth, async (req, res) => {
+    const user = getUserFromRequest(req);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const { conversationId } = req.query;
+      if (!conversationId || typeof conversationId !== "string") {
+        return res.status(400).json({ message: "Conversation ID is required" });
+      }
+      const messages = await storage.getMessagesByConversation(conversationId);
+      res.json(messages);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/messages", requireAuth, async (req, res) => {
+    const user = getUserFromRequest(req);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const { conversationId, content } = req.body;
+      if (!conversationId || !content) {
+        return res.status(400).json({ message: "Conversation ID and content are required" });
+      }
+      
+      await storage.updateConversation(conversationId);
+      const message = await storage.createMessage({
+        conversationId,
+        senderId: user.id,
+        content,
+      });
+      res.status(201).json(message);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  app.put("/api/messages/:id/read", requireAuth, async (req, res) => {
+    const user = getUserFromRequest(req);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const message = await storage.updateMessageReadStatus(req.params["id"] as string);
+      if (!message) return res.status(404).json({ message: "Message not found" });
+      res.json(message);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to update message" });
+    }
+  });
+
+  app.delete("/api/messages/:id", requireAuth, async (req, res) => {
+    const user = getUserFromRequest(req);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const message = await storage.getMessageById(req.params["id"] as string);
+      if (!message) return res.status(404).json({ message: "Message not found" });
+      if (message.senderId !== user.id) {
+        return res.status(403).json({ message: "Not authorized to delete this message" });
+      }
+      
+      const deleted = await storage.deleteMessage(req.params["id"] as string);
+      if (!deleted) return res.status(404).json({ message: "Message not found" });
+      res.json({ message: "Deleted" });
+    } catch (err) {
+      res.status(500).json({ message: "Failed to delete message" });
+    }
+  });
+
   return httpServer;
 }

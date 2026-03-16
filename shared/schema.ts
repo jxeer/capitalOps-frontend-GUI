@@ -157,3 +157,38 @@ export const userSchema = z.object({
 export type User = z.infer<typeof userSchema>;
 export const insertUserSchema = userSchema.omit({ id: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export const connectionRequestSchema = z.object({
+  id: z.string(),
+  senderId: z.string(),
+  receiverId: z.string(),
+  status: z.enum(["pending", "accepted", "declined"]).default("pending"),
+  message: z.string().optional(),
+  createdAt: z.string().default(() => new Date().toISOString()),
+  respondedAt: z.string().optional(),
+});
+export type ConnectionRequest = z.infer<typeof connectionRequestSchema>;
+export const insertConnectionRequestSchema = connectionRequestSchema.omit({ id: true }).partial().required({ senderId: true, receiverId: true });
+export type InsertConnectionRequest = z.infer<typeof insertConnectionRequestSchema>;
+
+export const messageSchema = z.object({
+  id: z.string(),
+  conversationId: z.string(),
+  senderId: z.string(),
+  content: z.string(),
+  readAt: z.string().optional(),
+  createdAt: z.string(),
+});
+export type Message = z.infer<typeof messageSchema>;
+export const insertMessageSchema = messageSchema.omit({ id: true, createdAt: true });
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
+export const conversationSchema = z.object({
+  id: z.string(),
+  userId1: z.string(),
+  userId2: z.string(),
+  updatedAt: z.string(),
+});
+export type Conversation = z.infer<typeof conversationSchema>;
+export const insertConversationSchema = conversationSchema.omit({ id: true, updatedAt: true });
+export type InsertConversation = z.infer<typeof insertConversationSchema>;

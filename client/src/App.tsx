@@ -31,6 +31,7 @@ import Vendors from "@/pages/vendors";
 import WorkOrders from "@/pages/work-orders";
 import InvestorPortal from "@/pages/investor-portal";
 import Profile from "@/pages/profile";
+import Connections from "@/pages/connections";
 import AuthPage from "@/pages/auth-page";
 
 function ThemeToggle() {
@@ -124,6 +125,7 @@ function Router() {
       <Route path="/work-orders" component={WorkOrders} />
       <Route path="/investor-portal" component={InvestorPortal} />
       <Route path="/profile" component={Profile} />
+      <Route path="/connections" component={Connections} />
       <Route component={NotFound} />
     </Switch>
   );

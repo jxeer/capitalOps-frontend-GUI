@@ -10,6 +10,9 @@ import type {
   WorkOrder, InsertWorkOrder,
   RiskFlag, Portfolio,
   User, InsertUser,
+  ConnectionRequest, InsertConnectionRequest,
+  Message, InsertMessage,
+  Conversation, InsertConversation,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -76,6 +79,29 @@ export interface IStorage {
   getUserByProfileType(profileType: string): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
+  
+  // Connection methods
+  getConnectionRequestsByUserId(userId: string): Promise<ConnectionRequest[]>;
+  getConnectionRequestById(id: string): Promise<ConnectionRequest | undefined>;
+  createConnectionRequest(request: InsertConnectionRequest): Promise<ConnectionRequest>;
+  updateConnectionRequest(id: string, status: "accepted" | "declined"): Promise<ConnectionRequest | undefined>;
+  deleteConnectionRequest(id: string): Promise<boolean>;
+  getConnectedUsers(userId: string): Promise<User[]>;
+  getPendingConnectionRequests(userId: string): Promise<ConnectionRequest[]>;
+  
+  // Conversation methods
+  getConversationById(id: string): Promise<Conversation | undefined>;
+  getOrCreateConversation(userId1: string, userId2: string): Promise<Conversation>;
+  getConversationsForUser(userId: string): Promise<Conversation[]>;
+  createConversation(conversation: InsertConversation): Promise<Conversation>;
+  updateConversation(id: string): Promise<Conversation | undefined>;
+  
+  // Message methods
+  getMessagesByConversation(conversationId: string): Promise<Message[]>;
+  getMessageById(id: string): Promise<Message | undefined>;
+  createMessage(message: InsertMessage): Promise<Message>;
+  updateMessageReadStatus(id: string): Promise<Message | undefined>;
+  deleteMessage(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -90,6 +116,9 @@ export class MemStorage implements IStorage {
   private vendors: Map<string, Vendor> = new Map();
   private workOrders: Map<string, WorkOrder> = new Map();
   private riskFlags: Map<string, RiskFlag> = new Map();
+  private connectionRequests: Map<string, ConnectionRequest> = new Map();
+  private conversations: Map<string, Conversation> = new Map();
+  private messages: Map<string, Message> = new Map();
 
   constructor() {
     this.seed();
@@ -476,6 +505,155 @@ export class MemStorage implements IStorage {
     const updated = { ...existing, ...data };
     this.users.set(id, updated);
     return updated;
+  }
+
+  // Connection methods
+  async getConnectionRequestsByUserId(userId: string): Promise<ConnectionRequest[]> {
+    const allRequests = Array.from(this.connectionRequests.values()) as ConnectionRequest[];
+    return allRequests.filter(r => r.senderId === userId || r.receiverId === userId);
+  }
+
+  async getConnectionRequestById(id: string): Promise<ConnectionRequest | undefined> {
+    return this.connectionRequests.get(id);
+  }
+
+  async createConnectionRequest(request: InsertConnectionRequest): Promise<ConnectionRequest> {
+    const id = randomUUID();
+    if (!request.senderId || !request.receiverId) {
+      throw new Error("senderId and receiverId are required");
+    }
+    const newRequest: ConnectionRequest = {
+      id,
+      senderId: request.senderId,
+      receiverId: request.receiverId,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      message: request.message,
+    };
+    this.connectionRequests.set(id, newRequest);
+    return newRequest;
+  }
+
+  async updateConnectionRequest(id: string, status: "accepted" | "declined"): Promise<ConnectionRequest | undefined> {
+    const existing = this.connectionRequests.get(id);
+    if (!existing) return undefined;
+    const updated: ConnectionRequest = {
+      ...existing,
+      status,
+      respondedAt: new Date().toISOString(),
+    };
+    this.connectionRequests.set(id, updated);
+    return updated;
+  }
+
+  async deleteConnectionRequest(id: string): Promise<boolean> {
+    return this.connectionRequests.delete(id);
+  }
+
+  async getConnectedUsers(userId: string): Promise<User[]> {
+    const connectedIds = new Set<string>();
+    const requests = Array.from(this.connectionRequests.values()) as ConnectionRequest[];
+    for (const request of requests) {
+      if (request.status === "accepted") {
+        if (request.senderId === userId) connectedIds.add(request.receiverId);
+        if (request.receiverId === userId) connectedIds.add(request.senderId);
+      }
+    }
+    return Array.from(this.users.values()).filter(u => connectedIds.has(u.id));
+  }
+
+  async getPendingConnectionRequests(userId: string): Promise<ConnectionRequest[]> {
+    return Array.from(this.connectionRequests.values()).filter(
+      r => r.receiverId === userId && r.status === "pending"
+    );
+  }
+
+  // Conversation methods
+  async getConversationById(id: string): Promise<Conversation | undefined> {
+    return this.conversations.get(id);
+  }
+
+  async getOrCreateConversation(userId1: string, userId2: string): Promise<Conversation> {
+    const existing = Array.from(this.conversations.values()).find(
+      c => (c.userId1 === userId1 && c.userId2 === userId2) ||
+           (c.userId1 === userId2 && c.userId2 === userId1)
+    );
+    if (existing) return existing;
+    
+    const id = randomUUID();
+    const newConversation: Conversation = {
+      id,
+      userId1,
+      userId2,
+      updatedAt: new Date().toISOString(),
+    };
+    this.conversations.set(id, newConversation);
+    return newConversation;
+  }
+
+  async getConversationsForUser(userId: string): Promise<Conversation[]> {
+    return Array.from(this.conversations.values()).filter(
+      c => c.userId1 === userId || c.userId2 === userId
+    );
+  }
+
+  async createConversation(conversation: InsertConversation): Promise<Conversation> {
+    const id = randomUUID();
+    const newConversation: Conversation = {
+      ...conversation,
+      id,
+      updatedAt: new Date().toISOString(),
+    };
+    this.conversations.set(id, newConversation);
+    return newConversation;
+  }
+
+  async updateConversation(id: string): Promise<Conversation | undefined> {
+    const existing = this.conversations.get(id);
+    if (!existing) return undefined;
+    const updated: Conversation = {
+      ...existing,
+      updatedAt: new Date().toISOString(),
+    };
+    this.conversations.set(id, updated);
+    return updated;
+  }
+
+  // Message methods
+  async getMessagesByConversation(conversationId: string): Promise<Message[]> {
+    return Array.from(this.messages.values())
+      .filter(m => m.conversationId === conversationId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }
+
+  async getMessageById(id: string): Promise<Message | undefined> {
+    return this.messages.get(id);
+  }
+
+  async createMessage(message: InsertMessage): Promise<Message> {
+    const id = randomUUID();
+    const newMessage: Message = {
+      ...message,
+      id,
+      createdAt: new Date().toISOString(),
+    };
+    this.messages.set(id, newMessage);
+    return newMessage;
+  }
+
+  async updateMessageReadStatus(id: string): Promise<Message | undefined> {
+    const existing = this.messages.get(id);
+    if (!existing) return undefined;
+    const updated: Message = {
+      ...existing,
+      readAt: new Date().toISOString(),
+    };
+    this.messages.set(id, updated);
+    return updated;
+  }
+
+  async deleteMessage(id: string): Promise<boolean> {
+    return this.messages.delete(id);
   }
 }
 

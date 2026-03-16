@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   TrendingUp,
   BarChart3,
+  Network,
 } from "lucide-react";
 import {
   Sidebar,
@@ -31,6 +32,7 @@ const capitalEngineItems = [
   { title: "Investors", url: "/investors", icon: Users },
   { title: "Allocations", url: "/allocations", icon: TrendingUp },
   { title: "Investor Portal", url: "/investor-portal", icon: BarChart3 },
+  { title: "Connections", url: "/connections", icon: Network },
 ];
 
 const executionItems = [
