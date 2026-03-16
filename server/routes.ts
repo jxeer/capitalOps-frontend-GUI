@@ -115,7 +115,13 @@ export async function registerRoutes(
       }
 
       const hashed = await hashPassword(password);
-      const user = await storage.createUser({ username, password: hashed, role: "viewer", profileStatus: "active" });
+      const user = await storage.createUser({ 
+        username, 
+        password: hashed, 
+        role: "viewer", 
+        profileStatus: "active",
+        title: username,
+      });
 
       const userData = { id: user.id, username: user.username, role: user.role };
       setJwtCookie(res, userData);
@@ -140,13 +146,41 @@ export async function registerRoutes(
     res.json({ message: "Logged out" });
   });
 
-  app.get("/api/user", requireAuth, async (req, res) => {
-    const user = getUserFromRequest(req);
-    if (!user) return res.status(401).json({ message: "Not authenticated" });
-    const fullUser = await storage.getUser(user.id);
-    if (!fullUser) return res.status(404).json({ message: "User not found" });
-    res.json({ id: fullUser.id, username: fullUser.username, role: fullUser.role, profileType: fullUser.profileType, profileStatus: fullUser.profileStatus, profileImage: fullUser.profileImage });
-  });
+   app.get("/api/user", requireAuth, async (req, res) => {
+     const user = getUserFromRequest(req);
+     if (!user) return res.status(401).json({ message: "Not authenticated" });
+     const fullUser = await storage.getUser(user.id);
+     if (!fullUser) return res.status(404).json({ message: "User not found" });
+     res.json({
+       id: fullUser.id,
+       username: fullUser.username,
+       role: fullUser.role,
+       profileType: fullUser.profileType,
+       profileStatus: fullUser.profileStatus,
+       profileImage: fullUser.profileImage,
+       email: fullUser.email,
+       title: fullUser.title,
+       organization: fullUser.organization,
+       linkedInUrl: fullUser.linkedInUrl,
+       bio: fullUser.bio,
+       geographicFocus: fullUser.geographicFocus,
+       investmentStage: fullUser.investmentStage,
+       targetReturn: fullUser.targetReturn,
+       checkSizeMin: fullUser.checkSizeMin,
+       checkSizeMax: fullUser.checkSizeMax,
+       riskTolerance: fullUser.riskTolerance,
+       strategicInterest: fullUser.strategicInterest,
+       serviceTypes: fullUser.serviceTypes,
+       geographicServiceArea: fullUser.geographicServiceArea,
+       yearsOfExperience: fullUser.yearsOfExperience,
+       certifications: fullUser.certifications,
+       averageProjectSize: fullUser.averageProjectSize,
+       developmentFocus: fullUser.developmentFocus,
+       developmentType: fullUser.developmentType,
+       teamSize: fullUser.teamSize,
+       portfolioValue: fullUser.portfolioValue,
+     });
+   });
 
   app.put("/api/users/:id", requireAuth, async (req, res) => {
     const user = getUserFromRequest(req);

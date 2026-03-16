@@ -12,6 +12,29 @@ type AuthUser = {
   profileStatus?: string;
   profileImage?: string;
   email?: string;
+  title?: string;
+  organization?: string;
+  linkedInUrl?: string;
+  bio?: string;
+  // General professional fields
+  geographicFocus?: string;
+  investmentStage?: string;
+  targetReturn?: string;
+  checkSizeMin?: number;
+  checkSizeMax?: number;
+  riskTolerance?: "Conservative" | "Moderate" | "Aggressive";
+  strategicInterest?: string;
+  // Vendor-specific fields
+  serviceTypes?: string;
+  geographicServiceArea?: string;
+  yearsOfExperience?: string;
+  certifications?: string;
+  averageProjectSize?: number;
+  // Developer-specific fields
+  developmentFocus?: string;
+  developmentType?: string;
+  teamSize?: number;
+  portfolioValue?: number;
 };
 
 type AuthContextType = {

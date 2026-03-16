@@ -153,6 +153,30 @@ export const userSchema = z.object({
   profileImage: z.string().optional(),
   profileType: z.enum(["investor", "vendor", "developer"]).optional(),
   profileStatus: z.enum(["active", "inactive", "pending", "suspended"]).default("pending"),
+  // General professional fields
+  title: z.string().optional(),
+  organization: z.string().optional(),
+  linkedInUrl: z.string().optional(),
+  bio: z.string().optional(),
+  // Investor-specific fields
+  geographicFocus: z.string().optional(),
+  investmentStage: z.string().optional(),
+  targetReturn: z.string().optional(),
+  checkSizeMin: z.number().optional(),
+  checkSizeMax: z.number().optional(),
+  riskTolerance: z.enum(["Conservative", "Moderate", "Aggressive"]).optional(),
+  strategicInterest: z.string().optional(),
+  // Vendor-specific fields
+  serviceTypes: z.string().optional(),
+  geographicServiceArea: z.string().optional(),
+  yearsOfExperience: z.string().optional(),
+  certifications: z.string().optional(),
+  averageProjectSize: z.number().optional(),
+  // Developer-specific fields
+  developmentFocus: z.string().optional(),
+  developmentType: z.string().optional(),
+  teamSize: z.number().optional(),
+  portfolioValue: z.number().optional(),
 });
 export type User = z.infer<typeof userSchema>;
 export const insertUserSchema = userSchema.omit({ id: true });

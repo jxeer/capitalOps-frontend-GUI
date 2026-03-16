@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { uploadToS3 } from "./s3";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -22,6 +23,8 @@ export async function apiRequest(
   await throwIfResNotOk(res);
   return res;
 }
+
+export { uploadToS3 };
 
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {

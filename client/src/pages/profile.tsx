@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { uploadToS3 } from "@/lib/s3";
 import { useAuth } from "@/hooks/use-auth";
-import { User, Briefcase, Building2, Target, MapPin, Shield, Lock } from "lucide-react";
+import { User, Briefcase, Building2, Target, MapPin, Shield, Lock, Upload } from "lucide-react";
 
 export default function Profile() {
   const { user, isLoading } = useAuth();
@@ -20,6 +21,12 @@ export default function Profile() {
     profileType: "investor",
     profileStatus: "pending",
   });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [title, setTitle] = useState("");
+  const [organization, setOrganization] = useState("");
+  const [linkedInUrl, setLinkedInUrl] = useState("");
+  const [bio, setBio] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -27,17 +34,37 @@ export default function Profile() {
         profileType: user.profileType || "investor",
         profileStatus: user.profileStatus || "pending",
       });
+      setTitle(user.title || "");
+      setOrganization(user.organization || "");
+      setLinkedInUrl(user.linkedInUrl || "");
+      setBio(user.bio || "");
     }
   }, [user]);
 
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast({ title: "Please select an image file", variant: "destructive" });
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast({ title: "Image size must be less than 2MB", variant: "destructive" });
+        return;
+      }
+      setAvatarFile(file);
+    }
+  };
+
   const updateMutation = useMutation({
-    mutationFn: async (data: { profileType?: string; profileStatus?: string }) => {
+    mutationFn: async (data: { profileType?: string; profileStatus?: string; profileImage?: string; title?: string; organization?: string; linkedInUrl?: string; bio?: string }) => {
       const res = await apiRequest("PUT", `/api/users/${user?.id}`, data);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       setEditing(false);
+      setAvatarFile(null);
       toast({ title: "Profile updated" });
     },
     onError: (err: Error) => {
@@ -45,14 +72,35 @@ export default function Profile() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (user) {
-      updateMutation.mutate({
-        profileType: form.profileType,
-        profileStatus: form.profileStatus,
-      });
+    if (!user) return;
+    
+    let profileImage = user.profileImage;
+    
+    if (avatarFile) {
+      setIsUploading(true);
+      try {
+        const { url } = await uploadToS3(avatarFile, `avatars/${user.id}/${Date.now()}-${avatarFile.name}`);
+        profileImage = url;
+      } catch (err: any) {
+        toast({ title: "Failed to upload avatar", description: err.message, variant: "destructive" });
+        setIsUploading(false);
+        return;
+      } finally {
+        setIsUploading(false);
+      }
     }
+    
+    updateMutation.mutate({
+      profileType: form.profileType,
+      profileStatus: form.profileStatus,
+      profileImage,
+      title,
+      organization,
+      linkedInUrl,
+      bio,
+    });
   };
 
   if (isLoading || !user) {
@@ -90,6 +138,37 @@ export default function Profile() {
                 <Avatar className="h-24 w-24 bg-primary text-primary-foreground ring-4 ring-ring/10">
                   <AvatarFallback className="text-2xl">{avatarFallback}</AvatarFallback>
                 </Avatar>
+              )}
+              {editing && (
+                <div className="space-y-2 w-full">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Profile Image</Label>
+                  <div className="flex items-center gap-2">
+                    <label className="cursor-pointer flex-1">
+                      <div className="flex items-center justify-center gap-2 p-2 border border-border rounded-md hover:bg-accent/20 transition-colors">
+                        <Upload className="h-4 w-4" />
+                        <span className="text-xs font-medium">Replace Image</span>
+                      </div>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleAvatarSelect}
+                        disabled={isUploading}
+                      />
+                    </label>
+                    {avatarFile && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setAvatarFile(null)}
+                        className="h-8 w-8"
+                      >
+                        <span className="text-xs">×</span>
+                      </Button>
+                    )}
+                  </div>
+                  {isUploading && <p className="text-[10px] text-primary">Uploading...</p>}
+                </div>
               )}
               <div>
                 <h2 className="text-xl font-bold">{user.username}</h2>
@@ -162,18 +241,38 @@ export default function Profile() {
                       <SelectTrigger id="profileStatus">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                        <SelectItem value="suspended">Suspended</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button type="submit" className="w-full" disabled={updateMutation.isPending}>
-                    {updateMutation.isPending ? "Saving..." : "Save Changes"}
-                  </Button>
-                </form>
+                       <SelectContent>
+                         <SelectItem value="pending">Pending</SelectItem>
+                         <SelectItem value="active">Active</SelectItem>
+                         <SelectItem value="inactive">Inactive</SelectItem>
+                         <SelectItem value="suspended">Suspended</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   </div>
+                   {editing && (
+                     <>
+                       <div className="space-y-2">
+                         <Label htmlFor="title">Professional Title</Label>
+                         <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Senior Developer" />
+                       </div>
+                       <div className="space-y-2">
+                         <Label htmlFor="organization">Organization</Label>
+                         <Input id="organization" value={organization} onChange={(e) => setOrganization(e.target.value)} placeholder="Company or organization name" />
+                       </div>
+                       <div className="space-y-2">
+                         <Label htmlFor="linkedInUrl">LinkedIn Profile</Label>
+                         <Input id="linkedInUrl" value={linkedInUrl} onChange={(e) => setLinkedInUrl(e.target.value)} placeholder="https://linkedin.com/in/username" />
+                       </div>
+                       <div className="space-y-2">
+                         <Label htmlFor="bio">Bio / Professional Summary</Label>
+                         <Input id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Brief professional background" />
+                       </div>
+                     </>
+                   )}
+                   <Button type="submit" className="w-full" disabled={updateMutation.isPending}>
+                     {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                   </Button>
+                 </form>
               ) : (
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/20">

@@ -191,6 +191,7 @@ export function setupAuth(app: Express) {
                 role: "viewer",
                 profileType: "investor",
                 profileStatus: "active",
+                title: profile.displayName,
               });
             }
             return done(null, { id: user.id, username: user.username, role: user.role });
