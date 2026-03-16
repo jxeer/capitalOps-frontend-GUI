@@ -34,14 +34,6 @@ import Profile from "@/pages/profile";
 import Connections from "@/pages/connections";
 import AuthPage from "@/pages/auth-page";
 
-function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
-  return (
-    <Button size="icon" variant="ghost" onClick={toggleTheme} data-testid="button-theme-toggle" aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
-      {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-    </Button>
-  );
-}
 
 function UserMenu() {
   const { user, logout } = useAuth();
