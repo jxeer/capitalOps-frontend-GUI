@@ -1,4 +1,5 @@
 import { useLocation, Link } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import {
   LayoutDashboard,
   Building2,
@@ -25,6 +26,9 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 const capitalEngineItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -49,6 +53,7 @@ const assetVendorItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const { user, logout } = useAuth();
 
   const renderGroup = (label: string, items: typeof capitalEngineItems) => (
     <SidebarGroup>
@@ -62,7 +67,7 @@ export function AppSidebar() {
               <SidebarMenuButton
                 asChild
                 data-active={location === item.url}
-                className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground"
+                className="transition-all duration-200 data-[active=true]:bg-sidebar-indicator data-[active=true]:text-sidebar-indicator-foreground data-[active=true]:font-medium shadow-sm before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-8 before:bg-primary before:rounded-r-full data-[active=true]:before:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
               >
                 <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(/\s+/g, "-")}`}>
                   <item.icon className="h-4 w-4" />
@@ -95,9 +100,18 @@ export function AppSidebar() {
         {renderGroup("Asset & Vendor", assetVendorItems)}
       </SidebarContent>
       <SidebarFooter className="p-4">
-        <div className="rounded-md bg-accent/50 p-3">
-          <p className="text-xs font-medium text-muted-foreground">Coral Capital Portfolio</p>
-          <p className="text-[10px] text-muted-foreground/70">3 Active Projects</p>
+        <div className="flex items-center gap-3 rounded-md bg-accent/50 p-3">
+          <Avatar className="h-9 w-9 flex-shrink-0">
+            <AvatarImage src={user?.profileImage ?? undefined} alt={user?.username ?? "User"} />
+            <AvatarFallback>{user?.username?.[0]?.toUpperCase() ?? "U"}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 overflow-hidden">
+            <p className="text-sm font-medium truncate" data-testid="sidebar-username">{user?.username ?? "User"}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{user?.role ?? "Investor"}</p>
+          </div>
+          <Button variant="ghost" size="icon" onClick={() => logout()} className="h-8 w-8 flex-shrink-0" aria-label="Log out">
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </SidebarFooter>
     </Sidebar>

@@ -18,27 +18,27 @@
   --sidebar: 0 0% 96%;
   --sidebar-foreground: 0 0% 9%;
   --sidebar-border: 0 0% 92%;
-  --sidebar-primary: 217 91% 35%;
-  --sidebar-primary-foreground: 217 91% 98%;
-  --sidebar-accent: 0 0% 94%;
-  --sidebar-accent-foreground: 0 0% 9%;
-  --sidebar-ring: 217 91% 35%;
+  --sidebar-primary: 24 94% 54%;
+  --sidebar-primary-foreground: 24 94% 98%;
+  --sidebar-accent: 24 100% 92%;
+  --sidebar-accent-foreground: 24 100% 15%;
+  --sidebar-ring: 24 94% 54%;
   --popover: 0 0% 95%;
   --popover-foreground: 0 0% 9%;
   --popover-border: 0 0% 91%;
-  --primary: 217 91% 35%;
-  --primary-foreground: 217 91% 98%;
-  --secondary: 0 0% 93%;
-  --secondary-foreground: 0 0% 9%;
-  --muted: 0 0% 94%;
-  --muted-foreground: 0 0% 40%;
-  --accent: 217 15% 92%;
-  --accent-foreground: 217 15% 15%;
+  --primary: 24 94% 54%;
+  --primary-foreground: 24 94% 98%;
+  --secondary: 142 76% 36%;
+  --secondary-foreground: 142 76% 98%;
+  --muted: 24 100% 60%;
+  --muted-foreground: 0 0% 25%;
+  --accent: 24 100% 92%;
+  --accent-foreground: 24 100% 15%;
   --destructive: 0 84% 42%;
   --destructive-foreground: 0 84% 98%;
   --input: 0 0% 78%;
-  --ring: 217 91% 35%;
-  --chart-1: 217 91% 35%;
+  --ring: 24 94% 54%;
+  --chart-1: 24 94% 54%;
   --chart-2: 142 76% 36%;
   --chart-3: 38 92% 50%;
   --chart-4: 280 87% 47%;
@@ -47,14 +47,14 @@
   --font-serif: Georgia, serif;
   --font-mono: JetBrains Mono, monospace;
   --radius: .5rem;
-  --shadow-2xs: 0px 2px 0px 0px hsl(217 91% 35% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(217 91% 35% / 0.00);
-  --shadow-sm: 0px 2px 0px 0px hsl(217 91% 35% / 0.00), 0px 1px 2px -1px hsl(217 91% 35% / 0.00);
-  --shadow: 0px 2px 0px 0px hsl(217 91% 35% / 0.00), 0px 1px 2px -1px hsl(217 91% 35% / 0.00);
-  --shadow-md: 0px 2px 0px 0px hsl(217 91% 35% / 0.00), 0px 2px 4px -1px hsl(217 91% 35% / 0.00);
-  --shadow-lg: 0px 2px 0px 0px hsl(217 91% 35% / 0.00), 0px 4px 6px -1px hsl(217 91% 35% / 0.00);
-  --shadow-xl: 0px 2px 0px 0px hsl(217 91% 35% / 0.00), 0px 8px 10px -1px hsl(217 91% 35% / 0.00);
-  --shadow-2xl: 0px 2px 0px 0px hsl(217 91% 35% / 0.00);
+  --shadow-2xs: 0px 2px 0px 0px hsl(24 94% 54% / 0.00);
+  --shadow-xs: 0px 2px 0px 0px hsl(24 94% 54% / 0.00);
+  --shadow-sm: 0px 2px 0px 0px hsl(24 94% 54% / 0.00), 0px 1px 2px -1px hsl(24 94% 54% / 0.00);
+  --shadow: 0px 2px 0px 0px hsl(24 94% 54% / 0.00), 0px 1px 2px -1px hsl(24 94% 54% / 0.00);
+  --shadow-md: 0px 2px 0px 0px hsl(24 94% 54% / 0.00), 0px 2px 4px -1px hsl(24 94% 54% / 0.00);
+  --shadow-lg: 0px 2px 0px 0px hsl(24 94% 54% / 0.00), 0px 4px 6px -1px hsl(24 94% 54% / 0.00);
+  --shadow-xl: 0px 2px 0px 0px hsl(24 94% 54% / 0.00), 0px 8px 10px -1px hsl(24 94% 54% / 0.00);
+  --shadow-2xl: 0px 2px 0px 0px hsl(24 94% 54% / 0.00);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 }
@@ -75,39 +75,39 @@
   --sidebar: 0 0% 11%;
   --sidebar-foreground: 0 0% 96%;
   --sidebar-border: 0 0% 14%;
-  --sidebar-primary: 217 91% 45%;
-  --sidebar-primary-foreground: 217 91% 98%;
-  --sidebar-accent: 0 0% 13%;
-  --sidebar-accent-foreground: 0 0% 96%;
-  --sidebar-ring: 217 91% 45%;
+  --sidebar-primary: 24 94% 65%;
+  --sidebar-primary-foreground: 24 94% 98%;
+  --sidebar-accent: 24 100% 15%;
+  --sidebar-accent-foreground: 24 100% 88%;
+  --sidebar-ring: 24 94% 65%;
   --popover: 0 0% 12%;
   --popover-foreground: 0 0% 96%;
   --popover-border: 0 0% 15%;
-  --primary: 217 91% 35%;
-  --primary-foreground: 217 91% 98%;
-  --secondary: 0 0% 14%;
-  --secondary-foreground: 0 0% 96%;
-  --muted: 0 0% 13%;
+  --primary: 24 94% 65%;
+  --primary-foreground: 24 94% 98%;
+  --secondary: 142 76% 45%;
+  --secondary-foreground: 142 76% 98%;
+  --muted: 24 100% 25%;
   --muted-foreground: 0 0% 62%;
-  --accent: 217 12% 15%;
-  --accent-foreground: 217 12% 88%;
+  --accent: 24 100% 15%;
+  --accent-foreground: 24 100% 88%;
   --destructive: 0 84% 35%;
   --destructive-foreground: 0 84% 98%;
   --input: 0 0% 26%;
-  --ring: 217 91% 45%;
-  --chart-1: 217 91% 65%;
-  --chart-2: 142 76% 60%;
-  --chart-3: 38 92% 65%;
-  --chart-4: 280 87% 67%;
-  --chart-5: 12 76% 71%;
-  --shadow-2xs: 0px 2px 0px 0px hsl(217 91% 45% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(217 91% 45% / 0.00);
-  --shadow-sm: 0px 2px 0px 0px hsl(217 91% 45% / 0.00), 0px 1px 2px -1px hsl(217 91% 45% / 0.00);
-  --shadow: 0px 2px 0px 0px hsl(217 91% 45% / 0.00), 0px 1px 2px -1px hsl(217 91% 45% / 0.00);
-  --shadow-md: 0px 2px 0px 0px hsl(217 91% 45% / 0.00), 0px 2px 4px -1px hsl(217 91% 45% / 0.00);
-  --shadow-lg: 0px 2px 0px 0px hsl(217 91% 45% / 0.00), 0px 4px 6px -1px hsl(217 91% 45% / 0.00);
-  --shadow-xl: 0px 2px 0px 0px hsl(217 91% 45% / 0.00), 0px 8px 10px -1px hsl(217 91% 45% / 0.00);
-  --shadow-2xl: 0px 2px 0px 0px hsl(217 91% 45% / 0.00);
+  --ring: 24 94% 65%;
+  --chart-1: 24 94% 54%;
+  --chart-2: 142 76% 36%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 280 87% 47%;
+  --chart-5: 12 76% 61%;
+  --shadow-2xs: 0px 2px 0px 0px hsl(24 94% 65% / 0.00);
+  --shadow-xs: 0px 2px 0px 0px hsl(24 94% 65% / 0.00);
+  --shadow-sm: 0px 2px 0px 0px hsl(24 94% 65% / 0.00), 0px 1px 2px -1px hsl(24 94% 65% / 0.00);
+  --shadow: 0px 2px 0px 0px hsl(24 94% 65% / 0.00), 0px 1px 2px -1px hsl(24 94% 65% / 0.00);
+  --shadow-md: 0px 2px 0px 0px hsl(24 94% 65% / 0.00), 0px 2px 4px -1px hsl(24 94% 65% / 0.00);
+  --shadow-lg: 0px 2px 0px 0px hsl(24 94% 65% / 0.00), 0px 4px 6px -1px hsl(24 94% 65% / 0.00);
+  --shadow-xl: 0px 2px 0px 0px hsl(24 94% 65% / 0.00), 0px 8px 10px -1px hsl(24 94% 65% / 0.00);
+  --shadow-2xl: 0px 2px 0px 0px hsl(24 94% 65% / 0.00);
 }
 
 @layer base {
@@ -141,6 +141,88 @@
  * need to be distinguished from eachother visually.
  */
 @layer utilities {
+  .font-heading-serif {
+    font-family: var(--font-serif);
+  }
+
+  .font-heading-sans {
+    font-family: var(--font-sans);
+  }
+
+  .no-default-hover-elevate {}
+
+  .no-default-active-elevate {}
+
+
+  /**
+   * Toggleable backgrounds go behind the content. Hoverable/active goes on top.
+   * This way they can stack/compound. Both will overlap the parent's borders!
+   * So borders will be automatically adjusted both on toggle, and hover/active,
+   * and they will be compounded.
+   */
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: -1;
+    /* sits behind content but above backdrop */
+  }
+
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
+  }
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.toggle-elevate::before {
+    inset: -1px;
+  }
+
+  /* Does not work on elements with overflow:hidden! */
+  .hover-elevate:not(.no-default-hover-elevate),
+  .active-elevate:not(.no-default-active-elevate),
+  .hover-elevate-2:not(.no-default-hover-elevate),
+  .active-elevate-2:not(.no-default-active-elevate) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: 999;
+    /* sits in front of content */
+  }
+
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
+  }
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
+    inset: -1px;
+  }
+}
 
   /* Hide ugly search cancel button in Chrome until we can style it properly */
   input[type="search"]::-webkit-search-cancel-button {
@@ -232,124 +314,206 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
+/**
+ * ACCESIBILITY LAYER
+ * WCAG 2.1 AA compliant enhancements
+ * ====================================================================== */
+
+:root {
+  --focus-ring-color: hsl(var(--ring));
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+}
+
+* {
+  scroll-behavior: smooth;
+}
+
+@layer utilities {
+  .focus-ring {
+    outline: none;
+    box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+    transition: box-shadow 150ms ease-in-out;
   }
 
-  body {
-    @apply font-sans antialiased bg-background text-foreground;
+  .focus-ring:focus {
+    box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+  }
+
+  .focus-ring:focus-visible {
+    box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color),
+      0 0 0 calc(var(--focus-ring-width) + var(--focus-ring-offset))
+        hsl(var(--background));
+  }
+
+  .contrast-enhanced {
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--card));
+  }
+
+  .contrast-enhanced :is(a, button, input, select, textarea) {
+    color: hsl(var(--primary));
+  }
+
+  .contrast-enhanced :is(a, button, input, select, textarea):hover {
+    color: hsl(var(--primary));
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+  }
+
+  .contrast-enhanced :is(a, button, input, select, textarea):focus-visible {
+    outline: 2px solid hsl(var(--foreground));
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .sr-only:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    padding: 8px 16px;
+    z-index: 100;
+    transition: top 150ms ease-in-out;
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 0 0 4px 4px;
+  }
+
+  .skip-link:focus {
+    top: 0;
+    outline: 2px solid hsl(var(--foreground));
+    outline-offset: 2px;
+  }
+
+  .contrast-enhanced:hover,
+  .contrast-enhanced:focus-visible {
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--accent));
+  }
+
+  .contrast-enhanced:focus-visible {
+    outline: 2px solid hsl(var(--foreground));
+    outline-offset: 2px;
   }
 }
 
-/**
- * Using the elevate system.
- * Automatic contrast adjustment.
- *
- * <element className="hover-elevate" />
- * <element className="active-elevate-2" />
- *
- * // Using the tailwind utility when a data attribute is "on"
- * <element className="toggle-elevate data-[state=on]:toggle-elevated" />
- * // Or manually controlling the toggle state
- * <element className="toggle-elevate toggle-elevated" />
- *
- * Elevation systems have to handle many states.
- * - not-hovered, vs. hovered vs. active  (three mutually exclusive states)
- * - toggled or not
- * - focused or not (this is not handled with these utilities)
- *
- * Even without handling focused or not, this is six possible combinations that
- * need to be distinguished from eachother visually.
- */
-@layer utilities {
-
-  /* Hide ugly search cancel button in Chrome until we can style it properly */
-  input[type="search"]::-webkit-search-cancel-button {
-    @apply hidden;
+@media (prefers-contrast: more) {
+  .focus-ring:focus-visible {
+    box-shadow: 0 0 0 var(--focus-ring-width) hsl(var(--foreground)),
+      0 0 0 calc(var(--focus-ring-width) + var(--focus-ring-offset))
+        hsl(var(--background));
   }
 
-  /* Placeholder styling for contentEditable div */
-  [contenteditable][data-placeholder]:empty::before {
-    content: attr(data-placeholder);
-    color: hsl(var(--muted-foreground));
-    pointer-events: none;
+  * {
+    outline-style: solid;
+    outline-width: var(--focus-ring-width);
+    outline-offset: var(--focus-ring-offset);
   }
 
-  /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
-   * buttons/badges can remove the automatic brightness adjustment on interactions
-   * and program their own. */
-  .no-default-hover-elevate {}
-
-  .no-default-active-elevate {}
-
-
-  /**
-   * Toggleable backgrounds go behind the content. Hoverable/active goes on top.
-   * This way they can stack/compound. Both will overlap the parent's borders!
-   * So borders will be automatically adjusted both on toggle, and hover/active,
-   * and they will be compounded.
-   */
-  .toggle-elevate::before,
-  .toggle-elevate-2::before {
-    content: "";
-    pointer-events: none;
-    position: absolute;
-    inset: 0px;
-    /*border-radius: inherit;   match rounded corners */
-    border-radius: inherit;
-    z-index: -1;
-    /* sits behind content but above backdrop */
+  :focus-visible {
+    outline-color: hsl(var(--primary));
+    outline-width: 3px;
+    outline-offset: 2px;
   }
 
-  .toggle-elevate.toggle-elevated::before {
-    background-color: var(--elevate-2);
+  :focus-visible:not(:focus) {
+    outline: none;
   }
 
-  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
-  .border.toggle-elevate::before {
-    inset: -1px;
+  .contrast-enhanced {
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--card));
+    border: 2px solid hsl(var(--foreground));
   }
 
-  /* Does not work on elements with overflow:hidden! */
-  .hover-elevate:not(.no-default-hover-elevate),
-  .active-elevate:not(.no-default-active-elevate),
-  .hover-elevate-2:not(.no-default-hover-elevate),
-  .active-elevate-2:not(.no-default-active-elevate) {
-    position: relative;
-    z-index: 0;
+  .contrast-enhanced :is(a, button, input, select, textarea):focus-visible {
+    outline: 3px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :focus-visible {
+    animation: focus-anim 200ms ease-out;
   }
 
-  .hover-elevate:not(.no-default-hover-elevate)::after,
-  .active-elevate:not(.no-default-active-elevate)::after,
-  .hover-elevate-2:not(.no-default-hover-elevate)::after,
-  .active-elevate-2:not(.no-default-active-elevate)::after {
-    content: "";
-    pointer-events: none;
-    position: absolute;
-    inset: 0px;
-    /*border-radius: inherit;   match rounded corners */
-    border-radius: inherit;
-    z-index: 999;
-    /* sits in front of content */
+  @keyframes focus-anim {
+    from {
+      box-shadow: 0 0 0 var(--focus-ring-width) transparent;
+    }
+    to {
+      box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+    }
   }
+}
 
-  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
-  .active-elevate:active:not(.no-default-active-elevate)::after {
-    background-color: var(--elevate-1);
-  }
+body:focus-visible {
+  outline: none;
+}
 
-  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
-  .active-elevate-2:active:not(.no-default-active-elevate)::after {
-    background-color: var(--elevate-2);
-  }
+*::focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
 
-  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
-  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
-  .border.active-elevate:not(.no-active-interaction-elevate)::after,
-  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
-  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
-  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
-    inset: -1px;
-  }
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+:focus {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 2px hsl(var(--background)),
+    0 0 0 4px hsl(var(--ring));
+}
+
+button.sr-only:focus,
+button.sr-only:focus-within {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: initial;
+  margin: initial;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
 }
