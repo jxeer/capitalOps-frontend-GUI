@@ -154,6 +154,7 @@ function ProtectedLayout() {
             <main className="flex-1 overflow-auto">
               <Switch>
                 <Route path="/" component={Dashboard} />
+                <Route path="/dashboard" component={Dashboard} />
                 <Route path="/assets" component={Assets} />
                 <Route path="/projects" component={Projects} />
                 <Route path="/deals" component={Deals} />
