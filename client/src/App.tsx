@@ -182,7 +182,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Switch>
-            <Route path="/splash" component={Splash} />
+            <Route path="/" component={Splash} />
             <Route path="/auth" component={AuthPage} />
             <Route>
               <AuthProvider>
