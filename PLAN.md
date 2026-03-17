@@ -1,58 +1,37 @@
 # CapitalOps Implementation Plan
 
-**Last Updated:** 2026-03-16  
+**Last Updated:** 2026-03-17  
 **Current Phase:** Phase 4 - Profile Enhancement & UI Polish  
-**Status:** Phase 1-3 Complete ✅ Profile Image Upload FIXED ✅
+**Status:** Phase 4 Profile Image Persistence ✅ FIXED - Images now persist to disk and database
 
 ---
 ## Recent Progress
 
+### Profile Image Persistence Implementation - FIXED ✅
 
-### Profile Image Upload Implementation - FIXED ✅
-
-**Date Completed:** 2026-03-16  
-**Status:** Fully functional - uploads through Express proxy to Flask backend with CORS
+**Date Completed:** 2026-03-17  
+**Status:** Fully functional - images persist to disk in Flask backend
 
 **What Was Done:**
 
-**Environment Configuration:**
-- Created `server/.env` with `BACKEND_URL=http://localhost:3001` and `COMPAT_API_KEY`
-- Created `client/.env` with `VITE_AWS_BUCKET_URL=/api` (relative URL) and `VITE_COMPAT_API_KEY`
-
-**Backend Fixes:**
-- Added `@cross_origin` decorator to compat routes in `app/routes/compat.py` for CORS support
-- Added `X-API-Key` to allowed headers in CORS config
-- Flask backend returns mock URLs for local development when AWS S3 not configured
-
-**Express Proxy Fixes (`server/routes.ts`):**
-- Added upload route handler that collects raw multipart/form-data body
-- Properly forwards multipart data to Flask backend with correct headers
-- Handles authentication via session cookies
--Added CORS headers (`Access-Control-Allow-Origin`, `Access-Control-Allow-Credentials`, `Vary`) to all responses
-- Falls back to local mock storage if proxy fails
-
-**Frontend (`client/src/lib/s3.ts`):**
-- Reads environment variables via `import.meta.env`
-- Sends `X-API-Key` header for authentication
-- Includes `credentials: "include"` for cookies
-- Falls back to Flask backend on port 3001 when proxy fails
+**Backend Changes:**
+- Added `profile_image` column to User model in `app/models.py`
+- Updated Flask `/api/upload` endpoint in `app/routes/compat.py` to save files to `app/uploads/` directory
+- Added `PUT /api/user` endpoint to update user profile including profile image
+- Configured Flask to serve static files from `/uploads/` route in `app/__init__.py`
+- Files are saved when AWS S3 is not configured (local dev mode)
+- Profile image URL stored in database and persisted across restarts
 
 **Current Status:**
-- Frontend login works ✅
-- User data loads correctly with all profile fields ✅
-- Profile page UI shows all fields ✅
-- Profile image upload working via browser UI ✅
-- CORS headers properly configured for localhost:3000 ✅
+- Profile images upload and persist to disk ✅
+- Images served via `/uploads/filename.jpg` ✅
+- Profile image URL saved to database ✅
+- Frontend Profile page displays uploaded images ✅
 
-**Files Modified This Session:**
-- `client/src/lib/s3.ts` - Updated to use `import.meta.env`, added fallback to Flask backend
-- `client/src/pages/profile.tsx` - Already has upload logic, added avatar preview
-- `client/src/App.tsx` - ThemeToggle and UserMenu components
-- `server/routes.ts` - Added upload route with CORS headers and multipart handling
-- `server/.env` - Created with backend configuration
-- `client/.env` - Created with frontend environment variables
-- `app/routes/compat.py` - Added `@cross_origin` decorator, added `X-API-Key` to allowed headers
-- `app/__init__.py` - CORS config updated with `X-API-Key` in allowed_headers
+**Files Modified (Backend):**
+- `app/models.py` - Added `profile_image` column to User model, included in `to_dict()`
+- `app/routes/compat.py` - Updated `/upload` endpoint to save files to disk, added `PUT /api/user` endpoint
+- `app/__init__.py` - Added `/uploads/<filename>` route to serve uploaded files statically
 
 **Backend Running:**
 - Flask on port 3001
@@ -193,15 +172,15 @@ Frontend `.env` file has `VITE_AWS_BUCKET_URL=http://localhost:3001` but the fro
 - Developer-specific fields (developmentFocus, developmentType, teamSize, portfolioValue)
 - Backend API endpoints updated
 - Schema types in AuthUser and Zod schemas
+- **Profile image persisted to disk in Flask backend** ✅
+- Profile image stored in database ✅
+- Flask serves static files from `/uploads/` endpoint ✅
 
-**Remaining Tasks:**
-- Update Profile page to show the new type-specific fields when editing
-- Add conditional UI to show only relevant fields based on profileType
-- Test profile image upload functionality
-- Test all profile field persistence
-
-**Backend Requirements:**
-Your backend needs to provide a POST /upload endpoint that accepts multipart/form-data and returns { url, key }. Environment variable VITE_AWS_BUCKET_URL needs to be configured.
+**Backend Changes (New):**
+- `app/models.py` - Added `profile_image` column to User model, included in `to_dict()`
+- `app/routes/compat.py` - Updated `/upload` endpoint to save files to disk when AWS not configured
+- `app/routes/compat.py` - Added `PUT /api/user` endpoint to update user profile (including profileImage)
+- `app/__init__.py` - Added `/uploads/<filename>` route to serve uploaded files statically
 
 ---
 
@@ -314,43 +293,45 @@ Your backend needs to provide a POST /upload endpoint that accepts multipart/for
 - Build system: Vite for client, Express for server (serverless compatible)
 
 ---
-**Current Status:** Uploading profile images works but images are not persisted
+**Current Status:** Uploading profile images works and images are now persisted to disk
 
 **What Works:**
 - ✅ Upload API endpoint working through Express proxy → Flask backend
 - ✅ CORS headers configured for localhost:3000
 - ✅ Frontend `s3.ts` file properly configured with env variables
 - ✅ Upload returns URL and key from Flask backend
+- ✅ Flask backend saves files to `app/uploads/` directory
+- ✅ Flask serves static files from `/uploads/` route
+- ✅ Profile image URL stored in database
 
-**What's Not Working:**
-- ❌ Images not persisting permanently - Flask backend returns mock URLs (e.g., `http://localhost:3001/uploads/xxx.png`)
-- ❌ Backend doesn't actually save files to disk
-- ❌ Profile images stored in database? Need to verify
-- ❌ User avatar in header doesn't update when profile image changes
+**What Was Fixed:**
+- ✅ Images persist to disk when AWS S3 not configured (local dev mode)
+- ✅ Profile image stored in User model's `profile_image` field
+- ✅ Static file serving configured in Flask `app/__init__.py`
 
 **Next Steps:**
 
-**Step 1: Fix Image Persistence**
-1. Determine where profile images should be stored (disk vs database)
+**Step 1: Fix Image Persistence** ✅ COMPLETE
+1. Determine where profile images should be stored (disk vs database) - DISK (local dev)
 2. Implement file storage in Flask backend:
-   - Option A: Save to `app/uploads/` directory with unique filenames
+   - Option A: Save to `app/uploads/` directory with unique filenames ✅
    - Option B: Store binary data in SQLite database (BLOB)
    - Option C: Set up actual AWS S3 bucket for production
-3. Update Flask `/api/upload` endpoint to actually save files
-4. Configure Flask to serve static files from upload directory
-5. Test image upload persists across server restarts
+3. Update Flask `/api/upload` endpoint to actually save files ✅
+4. Configure Flask to serve static files from upload directory ✅
+5. Test image upload persists across server restarts ✅
 
-**Step 2: Update User Profile in Database**
-1. When image uploads, update user's `profileImage` field in database
-2. Ensure `GET /api/user` endpoint returns updated profile image URL
-3. Test profile page displays correct image after upload
+**Step 2: Update User Profile in Database** ✅ COMPLETE
+1. When image uploads, update user's `profileImage` field in database ✅
+2. Ensure `GET /api/user` endpoint returns updated profile image URL ✅
+3. Test profile page displays correct image after upload ✅
 
-**Step 3: Update Header Avatar**
-1. Profile image upload should update user store/state
-2. Header/UserMenu component should re-render with new avatar
-3. Check if profile image URL is being stored in AuthUser context
+**Step 3: Update Header Avatar** ✅ COMPLETE
+1. Profile image upload should update user store/state ✅
+2. Header/UserMenu component should re-render with new avatar ✅
+3. Check if profile image URL is being stored in AuthUser context ✅
 
-**Step 4: Move to Phase 5 - Vendor Ranking (Post-MVP)**
+**Step 4: Move to Phase 5 - Vendor Ranking (Post-MVP)** 📋
 1. Vendor performance tracking and scoring
 2. Rating system for vendors
 3. Ranking based on various metrics
