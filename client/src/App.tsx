@@ -176,18 +176,6 @@ function ProtectedLayout() {
   );
 }
 
-function PublicLayout() {
-  return (
-    <Switch>
-      <Route path="/splash" component={Splash} />
-      <Route path="/auth" component={AuthPage} />
-      <Route>
-        <ProtectedLayout />
-      </Route>
-    </Switch>
-  );
-}
-
 export default function App() {
   return (
     <ThemeProvider>
