@@ -181,7 +181,7 @@ export default function App() {
         <TooltipProvider>
           <AuthProvider>
             <Switch>
-              <Route path="/splash" component={Splash} />
+              <Route path="/" component={Splash} />
               <Route path="/auth" component={AuthPage} />
               <Route>
                 <ProtectedLayout />
