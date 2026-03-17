@@ -8,12 +8,6 @@ import { storage } from "./storage";
 import { log } from "./index";
 import { setupAuth, requireAuth, hashPassword, comparePasswords, setJwtCookie, clearJwtCookie, getUserFromRequest } from "./auth";
 import passport from "passport";
-import dotenv from "dotenv";
-
-
-
-// Load environment variables from .env file
-dotenv.config();
 
 // Multer middleware for parsing multipart/form-data file uploads
 
