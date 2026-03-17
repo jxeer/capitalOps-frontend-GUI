@@ -37,6 +37,10 @@ export default function Connections() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    if (searchTerm.trim()) {
+      // Search users via API - TODO: Implement search endpoint
+      toast({ title: "Search not implemented yet", description: "This feature will be added soon" });
+    }
   };
 
   if (isLoading || (activeTab === "all" && connectionsLoading)) return null;
@@ -90,7 +94,7 @@ export default function Connections() {
                 <Button type="submit">Search</Button>
               </form>
 
-              <ScrollArea className="h-[500px]">
+               <ScrollArea className="h-[500px]">
                 <div className="space-y-3">
                   {activeTab === "all" && !searchTerm && (
                     <div className="p-4 rounded-lg bg-accent/20 mb-4">
@@ -105,9 +109,19 @@ export default function Connections() {
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-sm">{otherUser.username}</span>
-                              <Button size="sm" variant="outline" onClick={() => {
-                                toast({ title: "Connection request sent", description: `Request sent to ${otherUser.username}` });
-                              }}>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={async () => {
+                                  try {
+                                    await apiRequest("POST", "/api/connection-requests", { receiverId: otherUser.id });
+                                    toast({ title: "Connection request sent", description: `Request sent to ${otherUser.username}` });
+                                    queryClient.invalidateQueries({ queryKey: ["/api/connection-pending"] });
+                                  } catch (err: any) {
+                                    toast({ title: "Failed to send request", description: err.message, variant: "destructive" });
+                                  }
+                                }}
+                              >
                                 + Connect
                               </Button>
                             </div>
@@ -128,18 +142,25 @@ export default function Connections() {
                           <p className="text-xs text-muted-foreground capitalize">{connection.profileType || "User"}</p>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            toast({ title: "Conversation started", description: "You can now message this user" });
-                          }}
-                        >
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Message
-                        </Button>
-                      </div>
+                       <div className="flex gap-2">
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={async () => {
+                             try {
+                               const res = await apiRequest("POST", "/api/conversations", { otherUserId: connection.id });
+                               const conversation = await res.json();
+                               toast({ title: "Conversation started", description: "You can now message this user" });
+                               queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+                             } catch (err: any) {
+                               toast({ title: "Failed to start conversation", description: err.message, variant: "destructive" });
+                             }
+                           }}
+                         >
+                           <MessageSquare className="h-4 w-4 mr-2" />
+                           Message
+                         </Button>
+                       </div>
                     </div>
                   ))}
                   {activeTab === "all" && (!filteredConnections || filteredConnections.length === 0) && (

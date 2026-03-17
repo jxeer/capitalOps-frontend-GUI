@@ -194,7 +194,24 @@ export async function registerRoutes(
     res.json({ message: "Logged out" });
   });
 
-   app.get("/api/user", requireAuth, async (req, res) => {
+   app.get("/api/users", async (req, res) => {
+    await withBackendFallback(req, res, async () => {
+      const users = await storage.getUsers();
+      const search = req.query.search as string;
+      if (search) {
+        const lowerSearch = search.toLowerCase();
+        const filtered = users.filter(u => 
+          u.username?.toLowerCase().includes(lowerSearch) ||
+          u.title?.toLowerCase().includes(lowerSearch) ||
+          u.organization?.toLowerCase().includes(lowerSearch)
+        );
+        return res.json(filtered);
+      }
+      res.json(users);
+    });
+  });
+
+  app.get("/api/user", requireAuth, async (req, res) => {
      const user = getUserFromRequest(req);
      if (!user) return res.status(401).json({ message: "Not authenticated" });
      const fullUser = await storage.getUser(user.id);
