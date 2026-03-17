@@ -10,6 +10,7 @@ interface StatCardProps {
   trend?: { value: string; positive: boolean };
   testId?: string;
   variant?: "default" | "highlight" | "success" | "warning" | "danger";
+  className?: string;
 }
 
 const variantStyles = {
@@ -28,12 +29,12 @@ const variantBorders = {
   danger: "border-l-2 border-l-destructive",
 };
 
-export function StatCard({ title, value, subtitle, icon: Icon, trend, testId, variant = "default" }: StatCardProps) {
+export function StatCard({ title, value, subtitle, icon: Icon, trend, testId, variant = "default", className }: StatCardProps & { className?: string }) {
   const TrendIcon = trend ? (trend.positive ? TrendingUp : TrendingDown) : Minus;
   const trendColor = trend?.positive ? "text-chart-2" : trend?.positive === false ? "text-destructive" : "text-muted-foreground";
 
   return (
-    <Card className={`hover-elevate transition-all duration-200 hover:shadow-lg ${variantBorders[variant]}`} data-testid={testId}>
+    <Card className={`hover-elevate transition-all duration-200 hover:shadow-lg bg-background/90 backdrop-blur-sm border-card/50 ${variantBorders[variant]} ${className || ""}`} data-testid={testId}>
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">

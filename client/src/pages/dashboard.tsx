@@ -137,18 +137,17 @@ export default function Dashboard() {
   const { data: riskFlags } = useQuery<RiskFlag[]>({ queryKey: ["/api/risk-flags"] });
   const { data: allocations } = useQuery<Allocation[]>({ queryKey: ["/api/allocations"] });
   const { data: investors } = useQuery<Investor[]>({ queryKey: ["/api/investors"] });
-  const CHART_COLORS = getChartColors();
 
   /**
    * Shows skeleton loader while initial data is loading
    */
   if (statsLoading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-6">
         <Skeleton className="h-8 w-64" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-28" />
+            <Skeleton key={i} className="h-auto min-h-[88px] animate-pulse" />
           ))}
         </div>
       </div>
@@ -226,9 +225,9 @@ export default function Dashboard() {
   const totalAUM = formatCurrency(stats?.totalCapitalRaised || 0);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Hero Header with Portfolio Summary */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-background border p-6">
+      <div className="relative overflow-hidden rounded-2xl animate-in fade-in slide-in-from-bottom-4 duration-700 bg-gradient-to-br from-primary/20 via-primary/10 to-background/90 border backdrop-blur-md p-4 sm:p-6">
         <div className="relative z-10">
           <div className="flex items-center justify-between">
             <div>
@@ -250,11 +249,11 @@ export default function Dashboard() {
             )}
           </div>
           <div className="mt-6 flex items-baseline gap-2">
-            <span className="text-5xl font-bold tracking-tight text-primary">{totalAUM}</span>
+            <span className="text-5xl font-bold tracking-tight text-primary animate-pulse">{totalAUM}</span>
             <span className="text-lg text-muted-foreground">Assets Under Management</span>
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <Badge variant="secondary" className="bg-chart-2/20 text-chart-2">
+            <Badge variant="secondary" className="bg-chart-2/20 text-chart-2 animate-pulse">
               <TrendingUp className="h-3 w-3 mr-1" />
               {capitalProgress}% Capital Committed
             </Badge>
@@ -264,17 +263,18 @@ export default function Dashboard() {
           </div>
         </div>
         {/* Decorative gradient orb */}
-        <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl animate-[ping_3s_ease-in-out_infinite]" />
       </div>
 
       {/* Stat Cards with Trends */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Assets"
           value={stats?.totalAssets || 0}
           icon={Building2}
           trend={{ value: "+12% YoY", positive: true }}
           testId="stat-assets"
+          className="h-auto min-h-[88px]"
         />
         <StatCard
           title="Active Projects"
@@ -282,6 +282,7 @@ export default function Dashboard() {
           icon={FolderKanban}
           trend={{ value: "On track", positive: true }}
           testId="stat-projects"
+          className="h-auto min-h-[88px]"
         />
         <StatCard
           title="Active Investors"
@@ -289,6 +290,7 @@ export default function Dashboard() {
           icon={Users}
           trend={{ value: "+3 this month", positive: true }}
           testId="stat-investors"
+          className="h-auto min-h-[88px]"
         />
         <StatCard
           title="Active Deals"
@@ -296,13 +298,14 @@ export default function Dashboard() {
           icon={Handshake}
           trend={{ value: `${capitalProgress}% funded`, positive: capitalProgress >= 50 }}
           testId="stat-active-deals"
+          className="h-auto min-h-[88px]"
         />
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
         {/* Capital Raised Over Time */}
-        <Card className="min-h-[320px]">
+        <Card className="min-h-[320px] bg-card/90 backdrop-blur-sm border-card/50">
           <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
             <div className="flex items-center gap-2">
               <Activity className="h-4 w-4 text-primary" />
@@ -340,7 +343,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Deal Pipeline Status */}
-        <Card className="min-h-[320px]">
+        <Card className="min-h-[320px] bg-card/90 backdrop-blur-sm border-card/50">
           <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
             <div className="flex items-center gap-2">
               <PieChart className="h-4 w-4 text-primary" />
@@ -380,9 +383,9 @@ export default function Dashboard() {
       </div>
 
       {/* Second Row of Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
         {/* Project Budget Burn */}
-        <Card className="min-h-[320px]">
+        <Card className="min-h-[320px] bg-card/90 backdrop-blur-sm border-card/50">
           <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
             <div className="flex items-center gap-2">
               <Target className="h-4 w-4 text-primary" />
@@ -412,18 +415,26 @@ export default function Dashboard() {
         {/* Recent Activity & Risk Alerts */}
         <div className="space-y-4">
           {/* Risk Alerts */}
-          <Card>
+          <Card className="min-h-[320px] bg-card/90 backdrop-blur-sm border-card/50">
             <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-destructive" />
-                <CardTitle className="text-sm font-semibold">Risk Alerts</CardTitle>
-              </div>
-              <Badge variant="secondary" className="bg-destructive/15 text-destructive">
-                {stats?.riskFlags || 0} Open
-              </Badge>
+              {riskFlags?.filter(r => r.status === "Open").length === 0 ? (
+                <div className="flex items-center justify-center h-24">
+                  <p className="text-sm text-muted-foreground">No open risk alerts</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                    <CardTitle className="text-sm font-semibold">Risk Alerts</CardTitle>
+                  </div>
+                  <Badge variant="secondary" className="bg-destructive/15 text-destructive">
+                    {stats?.riskFlags || 0} Open
+                  </Badge>
+                </>
+              )}
             </CardHeader>
             <CardContent className="space-y-3">
-              {riskFlags?.filter(r => r.status === "Open").slice(0, 3).map((flag) => {
+              {riskFlags?.filter(r => r.status === "Open").length === 0 ? null : riskFlags?.filter(r => r.status === "Open").slice(0, 3).map((flag) => {
                 const project = projects?.find(p => p.id === flag.projectId);
                 return (
                   <div key={flag.id} className="p-3 rounded-lg bg-accent/30 border-l-2 border-l-chart-5 space-y-1" data-testid={`risk-flag-${flag.id}`}>
@@ -463,8 +474,8 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Allocations & Execution Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+        <Card className="bg-card/90 backdrop-blur-sm border-card/50">
           <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-4">
             <CardTitle className="text-sm font-semibold">Recent Allocations</CardTitle>
             <Link href="/allocations" data-testid="link-view-allocations">
@@ -474,7 +485,11 @@ export default function Dashboard() {
             </Link>
           </CardHeader>
           <CardContent className="space-y-3">
-            {allocations?.slice(0, 4).map((alloc) => (
+            {allocations?.length === 0 ? (
+              <div className="flex items-center justify-center h-24 text-center">
+                <p className="text-sm text-muted-foreground">No recent activity to display</p>
+              </div>
+            ) : allocations?.slice(0, 4).map((alloc) => (
               <div key={alloc.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-accent/30" data-testid={`allocation-row-${alloc.id}`}>
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{getInvestorName(alloc.investorId)}</p>
@@ -490,7 +505,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card/90 backdrop-blur-sm border-card/50">
           <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-4">
             <CardTitle className="text-sm font-semibold">Active Deals</CardTitle>
             <Link href="/deals" data-testid="link-view-deals">
@@ -500,7 +515,11 @@ export default function Dashboard() {
             </Link>
           </CardHeader>
           <CardContent className="space-y-4">
-            {deals?.slice(0, 3).map((deal) => {
+            {deals?.length === 0 ? (
+              <div className="flex items-center justify-center h-24 text-center">
+                <p className="text-sm text-muted-foreground">No recent activity to display</p>
+              </div>
+            ) : deals?.slice(0, 3).map((deal) => {
               const project = projects?.find(p => p.id === deal.projectId);
               const dealName = (deal as any).projectName || project?.phase || deal.phase || "Unknown";
               const progress = deal.capitalRequired > 0 ? Math.round((deal.capitalRaised / deal.capitalRequired) * 100) : 0;

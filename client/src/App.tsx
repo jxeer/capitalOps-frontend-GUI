@@ -33,6 +33,7 @@ import InvestorPortal from "@/pages/investor-portal";
 import Profile from "@/pages/profile";
 import Connections from "@/pages/connections";
 import AuthPage from "@/pages/auth-page";
+import Splash from "@/pages/splash";
 
 
 
@@ -114,26 +115,7 @@ function UserMenu() {
   );
 }
 
-function Router() {
-  return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/assets" component={Assets} />
-      <Route path="/projects" component={Projects} />
-      <Route path="/deals" component={Deals} />
-      <Route path="/investors" component={Investors} />
-      <Route path="/allocations" component={Allocations} />
-      <Route path="/milestones" component={Milestones} />
-      <Route path="/risk-flags" component={RiskFlags} />
-      <Route path="/vendors" component={Vendors} />
-      <Route path="/work-orders" component={WorkOrders} />
-      <Route path="/investor-portal" component={InvestorPortal} />
-      <Route path="/profile" component={Profile} />
-      <Route path="/connections" component={Connections} />
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
+
 
 const sidebarStyle = {
   "--sidebar-width": "16rem",
@@ -169,9 +151,23 @@ function ProtectedLayout() {
               <ThemeToggle />
             </div>
           </header>
-          <main className="flex-1 overflow-auto">
-            <Router />
-          </main>
+           <main className="flex-1 overflow-auto">
+             <Switch>
+               <Route path="/assets" component={Assets} />
+               <Route path="/projects" component={Projects} />
+               <Route path="/deals" component={Deals} />
+               <Route path="/investors" component={Investors} />
+               <Route path="/allocations" component={Allocations} />
+               <Route path="/milestones" component={Milestones} />
+               <Route path="/risk-flags" component={RiskFlags} />
+               <Route path="/vendors" component={Vendors} />
+               <Route path="/work-orders" component={WorkOrders} />
+               <Route path="/investor-portal" component={InvestorPortal} />
+               <Route path="/profile" component={Profile} />
+               <Route path="/connections" component={Connections} />
+               <Route component={NotFound} />
+             </Switch>
+           </main>
         </div>
       </div>
     </SidebarProvider>
@@ -185,6 +181,7 @@ export default function App() {
         <TooltipProvider>
           <AuthProvider>
             <Switch>
+              <Route path="/splash" component={Splash} />
               <Route path="/auth" component={AuthPage} />
               <Route>
                 <ProtectedLayout />
