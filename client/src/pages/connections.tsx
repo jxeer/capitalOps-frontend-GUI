@@ -18,6 +18,7 @@ export default function Connections() {
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [discoverTerm, setDiscoverTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
   const { data: connections, isLoading: connectionsLoading } = useQuery<UserType[]>({
@@ -96,6 +97,21 @@ export default function Connections() {
 
                <ScrollArea className="h-[500px]">
                 <div className="space-y-3">
+                  <div className="p-4 rounded-lg bg-accent/20 mb-4">
+                    <h3 className="text-sm font-semibold mb-2">Find New Users</h3>
+                    <form onSubmit={(e) => { e.preventDefault(); /* Search functionality */ }} className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          placeholder="Search by username, title, or organization..."
+                          value={discoverTerm}
+                          onChange={(e) => setDiscoverTerm(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                      <Button type="submit">Search</Button>
+                    </form>
+                  </div>
                   {activeTab === "all" && !searchTerm && (
                     <div className="p-4 rounded-lg bg-accent/20 mb-4">
                       <p className="text-sm text-muted-foreground mb-3">Quick Actions</p>
@@ -163,11 +179,10 @@ export default function Connections() {
                        </div>
                     </div>
                   ))}
-                  {activeTab === "all" && (!filteredConnections || filteredConnections.length === 0) && (
+                  {activeTab === "all" && searchTerm && !filteredConnections?.length && (
                     <div className="text-center py-8 text-muted-foreground">
                       <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No connections yet</p>
-                      <p className="text-xs mt-2">Connect with investors, vendors, or developers</p>
+                      <p>No connections matching "{searchTerm}"</p>
                     </div>
                   )}
                 </div>
