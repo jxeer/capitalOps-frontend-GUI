@@ -34,10 +34,10 @@ export default function SplashPage() {
           
           <div className="flex flex-col sm:flex-row gap-4">
             <Button size="lg" className="h-12 px-8 text-lg" asChild>
-              <Link href="/auth">
+              <a href="/auth">
                 Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
+              </a>
             </Button>
             <Button size="lg" variant="outline" className="h-12 px-8 text-lg" asChild>
               <Link href="#features">
@@ -307,10 +307,10 @@ export default function SplashPage() {
           </p>
           <div className="relative flex flex-col sm:flex-row justify-center gap-4">
             <Button size="lg" className="h-14 px-10 text-lg bg-white text-primary hover:bg-primary/10" asChild>
-              <Link href="/auth">
+              <a href="/auth">
                 Create Free Account
                 <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
+              </a>
             </Button>
             <Button size="lg" variant="outline" className="h-14 px-10 text-lg text-white border-white/30 hover:bg-white/10 hover:text-white" asChild>
               <Link href="#features">
