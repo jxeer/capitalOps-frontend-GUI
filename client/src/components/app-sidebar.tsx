@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
 const capitalEngineItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Deals", url: "/deals", icon: Handshake },
   { title: "Investors", url: "/investors", icon: Users },
   { title: "Allocations", url: "/allocations", icon: TrendingUp },
@@ -67,7 +67,7 @@ export function AppSidebar() {
               <SidebarMenuButton
                 asChild
                 data-active={location === item.url}
-                className="transition-all duration-200 data-[active=true]:bg-sidebar-indicator data-[active=true]:text-sidebar-indicator-foreground data-[active=true]:font-medium shadow-sm before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-8 before:bg-primary before:rounded-r-full data-[active=true]:before:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                className="transition-all duration-200 hover-elevate-2 data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground data-[active=true]:font-medium"
               >
                 <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(/\s+/g, "-")}`}>
                   <item.icon className="h-4 w-4" />
