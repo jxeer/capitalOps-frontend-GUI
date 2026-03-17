@@ -176,20 +176,32 @@ function ProtectedLayout() {
   );
 }
 
+function PublicLayout() {
+  return (
+    <Switch>
+      <Route path="/splash" component={Splash} />
+      <Route path="/auth" component={AuthPage} />
+      <Route>
+        <ProtectedLayout />
+      </Route>
+    </Switch>
+  );
+}
+
 export default function App() {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <AuthProvider>
-            <Switch>
-              <Route path="/" component={Splash} />
-              <Route path="/auth" component={AuthPage} />
-              <Route>
+          <Switch>
+            <Route path="/splash" component={Splash} />
+            <Route path="/auth" component={AuthPage} />
+            <Route>
+              <AuthProvider>
                 <ProtectedLayout />
-              </Route>
-            </Switch>
-          </AuthProvider>
+              </AuthProvider>
+            </Route>
+          </Switch>
           <Toaster />
         </TooltipProvider>
       </QueryClientProvider>
