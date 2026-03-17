@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, TrendingUp, Users, Shield, ArrowRight, DollarSign, Target, BarChart3 } from "lucide-react";
 
@@ -32,10 +32,15 @@ export default function SplashPage() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/auth" className="inline-flex h-12 items-center justify-center px-8 text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90">
+            <a 
+              href="/auth" 
+              target="_self" 
+              rel="noopener noreferrer"
+              className="inline-flex h-12 items-center justify-center px-8 text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90"
+            >
               Get Started
               <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
+            </a>
             <a
               href="#features"
               className="inline-flex h-12 items-center justify-center px-8 text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
@@ -304,10 +309,15 @@ export default function SplashPage() {
             Join institutional investors, developers, and vendors who trust CapitalOps for their real estate development needs.
           </p>
           <div className="relative flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/auth" className="inline-flex h-14 items-center justify-center px-10 text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white text-primary hover:bg-primary/10">
+            <a 
+              href="/auth" 
+              target="_self" 
+              rel="noopener noreferrer"
+              className="inline-flex h-14 items-center justify-center px-10 text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white text-primary hover:bg-primary/10"
+            >
               Create Free Account
               <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
+            </a>
             <a
               href="#features"
               className="inline-flex h-14 items-center justify-center px-10 text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-white/30 hover:bg-white/10 hover:text-white"
@@ -334,7 +344,7 @@ export default function SplashPage() {
             <div>
               <h4 className="font-semibold mb-4">Platform</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="#features" className="hover:text-primary">Features</Link></li>
+                <li><a href="#features" className="hover:text-primary">Features</a></li>
                 <li><a href="#" className="hover:text-primary">Pricing</a></li>
                 <li><a href="#" className="hover:text-primary">Integration</a></li>
               </ul>
