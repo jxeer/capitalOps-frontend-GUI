@@ -32,13 +32,10 @@ export default function SplashPage() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4">
-            <a
-              onClick={() => { window.location.href = '/auth'; }}
-              className="inline-flex h-12 items-center justify-center px-8 text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90"
-            >
+            <Link href="/auth" className="inline-flex h-12 items-center justify-center px-8 text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90">
               Get Started
               <ArrowRight className="ml-2 h-5 w-5" />
-            </a>
+            </Link>
             <a
               href="#features"
               className="inline-flex h-12 items-center justify-center px-8 text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
@@ -307,13 +304,10 @@ export default function SplashPage() {
             Join institutional investors, developers, and vendors who trust CapitalOps for their real estate development needs.
           </p>
           <div className="relative flex flex-col sm:flex-row justify-center gap-4">
-            <a
-              onClick={() => { window.location.href = '/auth'; }}
-              className="inline-flex h-14 items-center justify-center px-10 text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white text-primary hover:bg-primary/10"
-            >
+            <Link href="/auth" className="inline-flex h-14 items-center justify-center px-10 text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white text-primary hover:bg-primary/10">
               Create Free Account
               <ArrowRight className="ml-2 h-5 w-5" />
-            </a>
+            </Link>
             <a
               href="#features"
               className="inline-flex h-14 items-center justify-center px-10 text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-white/30 hover:bg-white/10 hover:text-white"
