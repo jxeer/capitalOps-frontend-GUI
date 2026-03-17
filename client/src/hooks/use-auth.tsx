@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (data) => {
       queryClient.setQueryData(["/api/user"], data);
       queryClient.invalidateQueries();
-      setLocation("/dashboard");
+      setLocation("/");
     },
     onError: (err: Error) => {
       toast({ title: "Login failed", description: err.message, variant: "destructive" });
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (data) => {
       queryClient.setQueryData(["/api/user"], data);
       queryClient.invalidateQueries();
-      setLocation("/dashboard");
+      setLocation("/");
     },
     onError: (err: Error) => {
       toast({ title: "Registration failed", description: err.message, variant: "destructive" });

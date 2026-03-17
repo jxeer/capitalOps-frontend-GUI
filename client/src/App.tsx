@@ -183,6 +183,7 @@ export default function App() {
             <Switch>
               <Route path="/" component={Splash} />
               <Route path="/auth" component={AuthPage} />
+              <Route path="/dashboard" component={Dashboard} />
               <Route>
                 <ProtectedLayout />
               </Route>
