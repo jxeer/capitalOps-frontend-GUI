@@ -86,6 +86,19 @@ function isSeedId(id: string): boolean {
   return /^(asset|proj|deal|inv|alloc|ms|vend|wo|rf|port)-\d+$/.test(id);
 }
 
+// Check if user is admin
+async function isAdmin(userId: string | undefined): Promise<boolean> {
+  if (!userId) return false;
+  const user = await storage.getUser(userId);
+  return user?.role === "admin";
+}
+
+// Filter out seed data for non-admin users
+async function filterSeedData<T extends { id: string }>(items: T[], userId: string | undefined): Promise<T[]> {
+  const admin = await isAdmin(userId);
+  return admin ? items : items.filter(item => !isSeedId(item.id));
+}
+
 // For GET list requests - merge backend results with locally-created items
 // Backend returns seed data, local storage has user-created items with UUIDs
 // Combines both to show complete list to user
@@ -96,6 +109,7 @@ async function withMergedList<T extends { id: string }>(
 ) {
   const backendPath = req.originalUrl;
   const result = await proxyToBackend(backendPath, "GET");
+  const user = getUserFromRequest(req);
 
   if (result.ok && Array.isArray(result.data)) {
     log(`Proxied GET ${backendPath} -> backend (${result.status})`, "proxy");
@@ -104,13 +118,17 @@ async function withMergedList<T extends { id: string }>(
     // Include seed items not covered by backend + any user-created local items
     const localNotInBackend = localItems.filter(item => !backendIds.has(item.id));
     const merged = [...(result.data as T[]), ...localNotInBackend];
-    return res.json(merged);
+    // Filter seed data for non-admin users
+    const filtered = await filterSeedData(merged, user?.id);
+    return res.json(filtered);
   }
 
   // Backend unavailable - use only local storage
   log(`Backend unavailable for ${backendPath}, using local storage`, "proxy");
   const localItems = await getLocal();
-  res.json(localItems);
+  // Filter seed data for non-admin users
+  const filtered = await filterSeedData(localItems, user?.id);
+  res.json(filtered);
 }
 
 export async function registerRoutes(
@@ -124,7 +142,7 @@ export async function registerRoutes(
     const existing = await storage.getUserByUsername("admin");
     if (!existing) {
       const hashed = await hashPassword("admin123");
-      await storage.createUser({
+      const admin = await storage.createUser({
         username: "admin",
         password: hashed,
         role: "admin",
@@ -135,6 +153,10 @@ export async function registerRoutes(
         email: "admin@capitalops.com",
       });
       log("Default admin user created (admin/admin123)");
+      
+      // Seed data for admin user
+      await storage.seed(admin.id);
+      log("Seed data populated for admin user");
     }
   })();
 
@@ -174,11 +196,17 @@ export async function registerRoutes(
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: any, info: any) => {
+    passport.authenticate("local", async (err: any, user: any, info: any) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ message: info?.message || "Invalid credentials" });
       const userData = { id: user.id, username: user.username, role: user.role };
       setJwtCookie(res, userData);
+      
+      // Seed data for admin users on first login
+      if (user.role === "admin") {
+        await storage.seed(user.id);
+      }
+      
       res.json(userData);
     })(req, res, next);
   });
@@ -312,7 +340,9 @@ export async function registerRoutes(
   app.get("/api/portfolios", async (req, res) => {
     await withBackendFallback(req, res, async () => {
       const portfolios = await storage.getPortfolios();
-      res.json(portfolios);
+      const user = getUserFromRequest(req);
+      const filtered = await filterSeedData(portfolios, user?.id);
+      res.json(filtered);
     });
   });
 

@@ -372,8 +372,9 @@ export default function Dashboard() {
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", border: "none", borderRadius: "8px" }}
-                  labelStyle={{ color: "#fff" }}
+                  contentStyle={{ backgroundColor: "rgba(0,0,0,0.85)", border: "none", borderRadius: "8px" }}
+                  labelStyle={{ color: "#f9fafb" }}
+                  itemStyle={{ color: "#f9fafb" }}
                 />
                 <Legend wrapperStyle={{ paddingTop: "10px" }} />
               </RePieChart>

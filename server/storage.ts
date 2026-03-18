@@ -122,7 +122,7 @@ export class MemStorage implements IStorage {
   private messages: Map<string, Message> = new Map();
 
   constructor() {
-    this.seed();
+    // Don't seed data in constructor - do it explicitly for admin users only
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -144,7 +144,7 @@ export class MemStorage implements IStorage {
     return newUser;
   }
 
-  private seed() {
+  async seed(userId: string) {
     const portfolioId = "port-001";
     this.portfolios.set(portfolioId, {
       id: portfolioId,
