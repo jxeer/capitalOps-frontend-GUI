@@ -333,7 +333,23 @@ export async function registerRoutes(
   app.get("/api/dashboard/stats", async (req, res) => {
     await withBackendFallback(req, res, async () => {
       const stats = await storage.getDashboardStats();
-      res.json(stats);
+      const user = getUserFromRequest(req);
+      // Filter stats for non-admin users to show empty values
+      const admin = await isAdmin(user?.id);
+      if (!admin) {
+        res.json({
+          totalAssets: 0,
+          activeProjects: 0,
+          totalCapitalRequired: 0,
+          totalCapitalRaised: 0,
+          activeDeals: 0,
+          totalInvestors: 0,
+          openWorkOrders: 0,
+          riskFlags: 0,
+        });
+      } else {
+        res.json(stats);
+      }
     });
   });
 

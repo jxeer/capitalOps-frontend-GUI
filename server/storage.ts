@@ -145,6 +145,10 @@ export class MemStorage implements IStorage {
   }
 
   async seed(userId: string) {
+    // Only seed data for admin users
+    const user = await this.getUser(userId);
+    if (!user || user.role !== "admin") return;
+
     const portfolioId = "port-001";
     this.portfolios.set(portfolioId, {
       id: portfolioId,
