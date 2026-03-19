@@ -231,7 +231,7 @@ export default function Dashboard() {
         <div className="relative z-10">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Coral Capital Portfolio</h1>
+              <h1 className="text-3xl font-bold tracking-tight">CapitalOps Portfolio</h1>
               <p className="text-muted-foreground mt-1">Real estate investment management platform</p>
             </div>
             {backendStatus && (
