@@ -1,10 +1,11 @@
 /**
  * Avatar / file upload helper
  *
- * POSTs to the local /api/upload endpoint which proxies to Flask backend.
+ * POSTs to the backend's /api/upload endpoint.
  * No S3 credentials or environment variables required.
  */
 
+const API_BASE = (import.meta.env as any).VITE_BACKEND_URL || "";
 const COMPAT_API_KEY = (import.meta.env as any).VITE_COMPAT_API_KEY || "";
 
 /**
@@ -29,7 +30,7 @@ export async function uploadToS3(
         };
         if (COMPAT_API_KEY) headers["X-API-Key"] = COMPAT_API_KEY;
 
-        const res = await fetch("/api/upload", {
+        const res = await fetch(`${API_BASE}/api/upload`, {
           method: "POST",
           headers,
           credentials: "include",
