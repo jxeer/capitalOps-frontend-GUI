@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Upload, Image, X, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +27,7 @@ export function MediaGallery({
   readOnly = false,
 }: MediaGalleryProps) {
   const [previews, setPreviews] = useState<MediaPreview[]>(initialMedia);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,12 +76,9 @@ export function MediaGallery({
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Media Gallery</h3>
             {!readOnly && (
-              <label className="cursor-pointer">
-                <Button size="sm" variant="outline" className="gap-2">
-                  <Upload className="h-4 w-4" />
-                  Upload Media
-                </Button>
+              <>
                 <input
+                  ref={fileInputRef}
                   type="file"
                   className="hidden"
                   accept={accept}
@@ -88,7 +86,16 @@ export function MediaGallery({
                   onChange={handleFileSelect}
                   disabled={previews.length >= maxFiles}
                 />
-              </label>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
+                  disabled={previews.length >= maxFiles}
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload Media
+                </button>
+              </>
             )}
           </div>
 

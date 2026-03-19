@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { MapPin, Map as MapIcon, Plus, X } from "lucide-react";
+import { MapPin, Map as MapIcon, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 interface AssetLocation {
   address: string;
@@ -25,7 +24,7 @@ export function AssetLocationMap({ initialLocation, onChange, readOnly = false }
     if (!addressInput.trim()) return;
 
     const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressInput)}`;
-    
+
     fetch(geocodeUrl)
       .then((res) => res.json())
       .then((data) => {
@@ -54,7 +53,7 @@ export function AssetLocationMap({ initialLocation, onChange, readOnly = false }
               Asset Location
             </h3>
             {!readOnly && (
-              <Button size="sm" variant="outline" onClick={() => setLocation(undefined)}>
+              <Button type="button" size="sm" variant="outline" onClick={() => setLocation(undefined)}>
                 <X className="h-4 w-4 mr-1" />
                 Clear
               </Button>
@@ -70,39 +69,54 @@ export function AssetLocationMap({ initialLocation, onChange, readOnly = false }
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 className="flex-1"
               />
-              <Button onClick={handleSearch} disabled={!addressInput.trim()}>
+              <Button type="button" onClick={handleSearch} disabled={!addressInput.trim()}>
                 <MapPin className="h-4 w-4 mr-1" />
                 Find
               </Button>
             </div>
           )}
 
-          {location ? (
+          {location && typeof location === 'object' && 'address' in location ? (
             <div className="space-y-3">
               <div className="p-4 bg-muted/30 rounded-lg space-y-2">
                 <div className="flex items-start gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{location.address}</p>
+                    <p className="text-sm font-medium truncate">{String(location.address)}</p>
                     <div className="flex gap-2 text-xs text-muted-foreground mt-1">
-                      <span>Lat: {location.lat.toFixed(5)}</span>
-                      <span>Lng: {location.lng.toFixed(5)}</span>
+                      <span>Lat: {Number(location.lat).toFixed(5)}</span>
+                      <span>Lng: {Number(location.lng).toFixed(5)}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="aspect-video w-full bg-muted rounded-lg overflow-hidden flex items-center justify-center">
-                <iframe
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  scrolling="no"
-                  marginHeight={0}
-                  marginWidth={0}
-                  src={`https://maps.openstreetmap.org/?lat=${location.lat}&lon=${location.lng}&zoom=15`}
-                  title="Asset Location"
-                />
+              <div className="aspect-video w-full bg-muted rounded-lg overflow-hidden relative flex items-center justify-center bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmZmIi8+PHN0cm9rZSB3aWR0aD0iMSIgc3Ryb2tlPSIjMDAwIiB4YXNjYWdlPSIxMCIgc2hhcGU9InJvdW5kIi8+PHN0cm9rZSB3aWR0aD0iMSIgc3Ryb2tlPSIjMDAwIiB4YXNjYWdlPSIxMCIgeD0iNTAlIiB5PSI1MCUiLz48c3Ryb2tlIHdpZHRoPSIxIiBzdHJva2U9IiMwMDAiIHhhc2FnZT0iMTAiIHg9IjUwJSIgeT0iNTAlIi8+PC9zdmc+')]">
+                <div className="text-center">
+                  <MapPin className="h-12 w-12 text-chart-2 mx-auto mb-2" />
+                  <p className="text-sm font-medium">{String(location.address)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{Number(location.lat).toFixed(5)}, {Number(location.lng).toFixed(5)}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <a
+                  href={`https://www.openstreetmap.org/?mlon=${Number(location.lng)}&mlat=${Number(location.lat)}&zoom=15`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-chart-2 hover:underline flex items-center gap-1"
+                >
+                  <MapPin className="h-3 w-3" />
+                  OpenStreetMap
+                </a>
+                <a
+                  href={`https://www.google.com/maps?q=${Number(location.lat)},${Number(location.lng)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-chart-2 hover:underline flex items-center gap-1"
+                >
+                  <MapIcon className="h-3 w-3" />
+                  Google Maps
+                </a>
               </div>
             </div>
           ) : (

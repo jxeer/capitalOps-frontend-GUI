@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+export const mediaSchema = z.object({
+  url: z.string(),
+  type: z.enum(["image", "video"]),
+  name: z.string(),
+});
+export type Media = z.infer<typeof mediaSchema>;
+
 export const portfolioSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -16,6 +23,7 @@ export const assetSchema = z.object({
   squareFootage: z.number(),
   status: z.enum(["Pre-dev", "Active", "Stabilized"]),
   assetManager: z.string(),
+  media: z.array(mediaSchema).optional().default([]),
 });
 export type Asset = z.infer<typeof assetSchema>;
 export const insertAssetSchema = assetSchema.omit({ id: true });
@@ -33,6 +41,7 @@ export const projectSchema = z.object({
   status: z.enum(["Planning", "In Progress", "On Track", "At Risk", "On Hold", "Complete", "Completed"]),
   pmAssigned: z.string(),
   description: z.string().optional(),
+  media: z.array(mediaSchema).optional().default([]),
 });
 export type Project = z.infer<typeof projectSchema>;
 export const insertProjectSchema = projectSchema.omit({ id: true });

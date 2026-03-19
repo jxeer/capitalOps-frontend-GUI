@@ -868,78 +868,51 @@ export async function registerRoutes(
     }
   });
 
-  // Upload route - proxy to Flask backend or use local storage fallback
-  // Handles multipart/form-data requests for file uploads
-
-  // Upload route - proxy to Flask backend or use local storage fallback
-  // Handles multipart/form-data requests for file uploads
+  // Upload route - proxy base64-encoded images to Flask backend
   app.post("/api/upload", requireAuth, async (req, res) => {
     log("POST /api/upload received", "proxy");
     const user = getUserFromRequest(req);
     if (!user) return res.status(401).json({ message: "Not authenticated" });
-    
-    // Collect raw body data for multipart/form-data
-    let rawBody: Buffer | undefined;
-    req.on("data", (chunk) => {
-      rawBody = Buffer.concat([rawBody || Buffer.alloc(0), chunk]);
-    });
-    
-    // Wait for body to be fully received
-    await new Promise<void>((resolve, reject) => {
-      req.on("end", resolve);
-      req.on("error", reject);
-    });
-    
-    // Try to proxy to Flask backend directly with raw multipart data
-    if (BACKEND_URL && rawBody) {
-      const contentType = req.headers["content-type"] || "";
-      if (contentType.includes("multipart/form-data")) {
-        try {
-          const url = `${BACKEND_URL}/api/upload`;
-          const headers: Record<string, string> = {
-            "Accept": "application/json",
-            "Content-Type": contentType,
-          };
-          if (process.env.COMPAT_API_KEY) {
-            headers["X-API-Key"] = process.env.COMPAT_API_KEY;
-          }
-          
-          const response = await fetch(url, {
-            method: "POST",
-            headers,
-            body: rawBody,
-            credentials: "include",
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            log(`Proxied POST /api/upload -> backend (${response.status})`, "proxy");
-            // Add CORS headers to response
-            res.set({
-              "Access-Control-Allow-Origin": "http://localhost:3000",
-              "Access-Control-Allow-Credentials": "true",
-              "Vary": "Origin"
-            });
-            return res.status(response.status).json(data);
-          }
-          log(`Backend proxy failed for /api/upload, using local storage`, "proxy");
-        } catch (err) {
-          log(`Backend proxy error for /api/upload: ${err}`, "proxy");
+
+    // Expect JSON body with base64-encoded image
+    const body = req.body;
+    if (!body || !body.imageData) {
+      return res.status(400).json({ error: "imageData required" });
+    }
+
+    if (BACKEND_URL) {
+      try {
+        const url = `${BACKEND_URL}/api/upload`;
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (process.env.COMPAT_API_KEY) {
+          headers["X-API-Key"] = process.env.COMPAT_API_KEY;
         }
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(body),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          log(`Proxied POST /api/upload -> backend (${response.status})`, "proxy");
+          res.set({
+            "Access-Control-Allow-Origin": "http://localhost:3000",
+            "Access-Control-Allow-Credentials": "true",
+            "Vary": "Origin"
+          });
+          return res.status(response.status).json(data);
+        }
+        log(`Backend proxy failed for /api/upload: ${response.status}`, "proxy");
+      } catch (err) {
+        log(`Backend proxy error for /api/upload: ${err}`, "proxy");
       }
     }
-    
-    // Local storage fallback - return a mock URL
-    // Add CORS headers to fallback response as well
-    res.set({
-      "Access-Control-Allow-Origin": "http://localhost:3000",
-      "Access-Control-Allow-Credentials": "true",
-      "Vary": "Origin"
-    });
-    res.status(201).json({
-      url: `http://localhost:3000/uploads/${Date.now()}-upload.png`,
-      key: `uploads/${Date.now()}-upload.png`,
-    });
+
+    res.status(500).json({ error: "Upload service unavailable" });
   });
 
   return httpServer;

@@ -159,30 +159,35 @@ export default function Assets() {
    */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = { ...form, portfolioId: "port-001", squareFootage: Number(form.squareFootage) || 0, location: location || undefined };
+    const payload = { ...form, portfolioId: "port-001", squareFootage: Number(form.squareFootage) || 0, location: location || undefined, media: mediaPreviews };
     if (editing) { updateMutation.mutate({ id: editing.id, data: payload }); } else { createMutation.mutate(payload); }
   };
 
   /**
    * Handles media upload from file input
-   * Creates object URLs for preview before actual upload
+   * Uploads files to backend and stores permanent URLs
    * @param files - FileList from input element
    */
   const handleMediaUpload = async (files: FileList) => {
+    const { uploadToS3 } = await import("@/lib/s3");
     const newPreviews: { url: string; type: "image" | "video"; name: string }[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) continue;
-      const url = URL.createObjectURL(file);
-      const type = file.type.startsWith("image/") ? "image" : "video";
-      newPreviews.push({ url, type, name: file.name });
+      try {
+        const { url } = await uploadToS3(file);
+        const type = file.type.startsWith("image/") ? "image" : "video";
+        newPreviews.push({ url, type, name: file.name });
+      } catch (err) {
+        console.error("Upload failed:", err);
+      }
     }
     setMediaPreviews((prev) => [...prev, ...newPreviews]);
   };
 
   /**
    * Removes media from preview list
-   * @param urlToRemove - Object URL to remove from previews
+   * @param urlToRemove - URL to remove from previews
    */
   const handleRemoveMedia = (urlToRemove: string) => {
     setMediaPreviews((prev) => prev.filter((p) => p.url !== urlToRemove));
