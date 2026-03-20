@@ -141,30 +141,23 @@ function GoogleSignInButton() {
         }
         try {
           const url = `${backendUrl}/api/v1/auth/google/`;
-          alert("POSTing to: " + url);
           const res = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ credential: response.credential }),
           });
-          alert("Response status: " + res.status);
           const data = await res.json();
-          alert("Response data: " + JSON.stringify(data).substring(0, 200));
           if (data.accessToken) {
-            // Store token in the format expected by the app
             localStorage.setItem("auth_token", data.accessToken);
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("user", JSON.stringify(data.user));
-            // Set the user data directly in the query cache to avoid re-fetching
             queryClient.setQueryData(["/api/user"], data.user);
-            // Navigate to dashboard
             window.location.href = "/dashboard";
           } else if (data.error) {
             toast({ title: "Sign-in failed", description: data.error, variant: "destructive" });
           }
         } catch (e) {
-          alert("Fetch error: " + e.message);
-          toast({ title: "Network error", description: e.message, variant: "destructive" });
+          toast({ title: "Network error", description: String(e), variant: "destructive" });
         }
       },
     });
