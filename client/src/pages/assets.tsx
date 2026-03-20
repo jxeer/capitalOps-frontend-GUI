@@ -114,7 +114,7 @@ export default function Assets() {
     setEditing(asset);
     setForm({ name: asset.name, location: asset.location, assetType: asset.assetType, squareFootage: String(asset.squareFootage), status: asset.status, assetManager: asset.assetManager });
     setLocation(asset.location ? { address: asset.location, lat: 0, lng: 0 } : undefined);
-    setMediaPreviews([]);
+    setMediaPreviews(asset.media || []);
     setOpen(true);
   };
   
