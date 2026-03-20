@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -154,8 +155,10 @@ function GoogleSignInButton() {
             localStorage.setItem("auth_token", data.accessToken);
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("user", JSON.stringify(data.user));
-            // Force reload the page to pick up the new auth state
-            window.location.reload();
+            // Set the user data directly in the query cache to avoid re-fetching
+            queryClient.setQueryData(["/api/user"], data.user);
+            // Navigate to dashboard
+            window.location.href = "/dashboard";
           } else if (data.error) {
             toast({ title: "Sign-in failed", description: data.error, variant: "destructive" });
           }
