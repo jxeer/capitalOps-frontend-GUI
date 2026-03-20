@@ -126,65 +126,63 @@ function GoogleSignInButton() {
   const { toast } = useToast();
   const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    if (!googleClientId || !backendUrl) {
-      return;
-    }
-    if (!(window as any).google) {
-      const timer = setInterval(() => {
-        if ((window as any).google) {
-          clearInterval(timer);
-          (window as any).google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: () => {},
-          });
-          setReady(true);
-        }
-      }, 100);
-      return () => clearInterval(timer);
-    }
-    (window as any).google.accounts.id.initialize({
-      client_id: googleClientId,
-      callback: () => {},
-    });
-    setReady(true);
-  }, [googleClientId, backendUrl]);
-
   const handleGoogleSignIn = async () => {
     if (!ready) {
-      toast({ title: "Google not ready", description: "Please wait a moment and try again", variant: "destructive" });
+      toast({ title: "Google not ready", description: "Please wait and refresh", variant: "destructive" });
       return;
     }
     
     try {
       const { google } = window as any;
-      google.accounts.id.prompt((response: any) => {
-        if (response.credential) {
-          fetch(`${backendUrl}/api/v1/auth/google`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ credential: response.credential }),
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data.accessToken) {
-              localStorage.setItem("accessToken", data.accessToken);
-              localStorage.setItem("user", JSON.stringify(data.user));
-              login(data.user, data.accessToken);
-              window.location.href = "/";
-            } else if (data.error) {
-              toast({ title: "Sign-in failed", description: data.error, variant: "destructive" });
-            }
-          })
-          .catch(e => {
-            toast({ title: "Network error", description: String(e), variant: "destructive" });
-          });
-        }
-      });
+      google.accounts.id.prompt();
     } catch (e) {
       toast({ title: "Google sign-in error", description: String(e), variant: "destructive" });
     }
   };
+
+  useEffect(() => {
+    if (!googleClientId || !backendUrl) {
+      console.log("Missing config:", { googleClientId, backendUrl });
+      return;
+    }
+    
+    const checkGoogle = () => {
+      if ((window as any).google) {
+        (window as any).google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: async (response: any) => {
+            if (!response.credential) {
+              toast({ title: "No credential received", variant: "destructive" });
+              return;
+            }
+            try {
+              const res = await fetch(`${backendUrl}/api/v1/auth/google`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ credential: response.credential }),
+              });
+              const data = await res.json();
+              if (data.accessToken) {
+                localStorage.setItem("accessToken", data.accessToken);
+                localStorage.setItem("user", JSON.stringify(data.user));
+                login(data.user, data.accessToken);
+                window.location.href = "/";
+              } else if (data.error) {
+                toast({ title: "Sign-in failed", description: data.error, variant: "destructive" });
+              }
+            } catch (e) {
+              toast({ title: "Network error", description: String(e), variant: "destructive" });
+            }
+          },
+        });
+        setReady(true);
+      }
+    };
+    
+    checkGoogle();
+    const interval = setInterval(checkGoogle, 500);
+    return () => clearInterval(interval);
+  }, [googleClientId, backendUrl, login, toast]);
 
   return (
     <Button
