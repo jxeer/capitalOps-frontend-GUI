@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
 const API_BASE = (import.meta.env as any).VITE_BACKEND_URL || "";
+const API_KEY = (import.meta.env as any).VITE_COMPAT_API_KEY || "";
 
 type AuthUser = {
   id: string;
@@ -67,9 +68,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (API_KEY) headers["X-API-Key"] = API_KEY;
       const res = await fetch(`${API_BASE}/api/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ username, password }),
         credentials: "include",
       });
@@ -91,9 +94,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (API_KEY) headers["X-API-Key"] = API_KEY;
       const res = await fetch(`${API_BASE}/api/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ username, password }),
         credentials: "include",
       });
