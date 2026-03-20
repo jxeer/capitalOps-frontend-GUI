@@ -134,9 +134,17 @@ function GoogleSignInButton() {
     
     try {
       const { google } = window as any;
-      alert("About to call prompt...");
-      google.accounts.id.prompt();
-      alert("Prompt called");
+      try {
+        google.accounts.id.prompt();
+      } catch (e) {
+        alert("prompt failed: " + e);
+        // Fallback to renderButton
+        const btn = document.createElement("div");
+        document.body.appendChild(btn);
+        google.accounts.id.renderButton(btn, { theme: "outline", size: "large", text: "signin_with" });
+        btn.click();
+        document.body.removeChild(btn);
+      }
     } catch (e) {
       alert("Error: " + e);
       toast({ title: "Google sign-in error", description: String(e), variant: "destructive" });
