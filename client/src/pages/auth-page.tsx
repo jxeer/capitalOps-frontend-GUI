@@ -126,13 +126,15 @@ function GoogleSignInButton() {
 
   if (!googleStatus?.enabled) return null;
 
+  const backendUrl = (import.meta.env as any).VITE_BACKEND_URL || "";
+
   return (
     <Button
       variant="outline"
       className="w-full gap-2"
       data-testid="button-google-signin"
       onClick={() => {
-        window.location.href = "/api/auth/google";
+        window.location.href = `${backendUrl}/api/v1/auth/google`;
       }}
     >
       <SiGoogle className="h-4 w-4" />
