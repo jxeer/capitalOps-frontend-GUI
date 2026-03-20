@@ -121,16 +121,13 @@ function Feature({ title, desc }: { title: string; desc: string }) {
 
 function GoogleSignInButton() {
   const backendUrl = (import.meta.env as any).VITE_BACKEND_URL || "";
-  console.log("VITE_BACKEND_URL:", backendUrl);
-  
+
   const handleGoogleSignIn = async () => {
-    console.log("Button clicked, fetching:", `${backendUrl}/api/v1/auth/google/status`);
     try {
       const res = await fetch(`${backendUrl}/api/v1/auth/google/status`);
       const data = await res.json();
-      console.log("Response:", data);
-      if (data.enabled && data.authUrl) {
-        window.location.href = data.authUrl;
+      if (data.enabled) {
+        window.location.href = `${backendUrl}/api/v1/auth/google`;
       }
     } catch (e) {
       console.error("Google sign-in error:", e);
