@@ -121,18 +121,51 @@ function Feature({ title, desc }: { title: string; desc: string }) {
 
 function GoogleSignInButton() {
   const backendUrl = (import.meta.env as any).VITE_BACKEND_URL || "";
+  const { login } = useAuth();
+  const { toast } = useToast();
 
   const handleGoogleSignIn = async () => {
     try {
-      const res = await fetch(`${backendUrl}/api/v1/auth/google/gauth`);
-      const data = await res.json();
-      if (data.authUrl) {
-        window.location.href = data.authUrl;
-      } else if (data.error) {
-        console.error("Google auth error:", data.error);
+      const clientId = (import.meta.env as any).VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        toast({ title: "Google sign-in not configured", variant: "destructive" });
+        return;
       }
+
+      const { google } = window as any;
+      if (!google) {
+        toast({ title: "Google SDK not loaded", variant: "destructive" });
+        return;
+      }
+
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: async (response: any) => {
+          try {
+            const res = await fetch(`${backendUrl}/api/v1/auth/google`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ credential: response.credential }),
+            });
+            const data = await res.json();
+            if (data.accessToken) {
+              localStorage.setItem("accessToken", data.accessToken);
+              localStorage.setItem("user", JSON.stringify(data.user));
+              login(data.user, data.accessToken);
+              window.location.href = "/";
+            } else if (data.error) {
+              toast({ title: "Sign-in failed", description: data.error, variant: "destructive" });
+            }
+          } catch (e) {
+            toast({ title: "Sign-in error", description: String(e), variant: "destructive" });
+          }
+        },
+      });
+
+      google.accounts.id.prompt();
     } catch (e) {
       console.error("Google sign-in error:", e);
+      toast({ title: "Google sign-in failed", variant: "destructive" });
     }
   };
 
