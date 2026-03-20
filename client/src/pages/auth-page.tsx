@@ -154,8 +154,8 @@ function GoogleSignInButton() {
             localStorage.setItem("auth_token", data.accessToken);
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("user", JSON.stringify(data.user));
-            // Reload to let the auth system pick up the new token
-            window.location.href = "/";
+            // Force reload the page to pick up the new auth state
+            window.location.reload();
           } else if (data.error) {
             toast({ title: "Sign-in failed", description: data.error, variant: "destructive" });
           }
