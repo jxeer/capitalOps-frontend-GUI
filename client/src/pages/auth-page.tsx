@@ -139,7 +139,7 @@ function GoogleSignInButton() {
           return;
         }
         try {
-          const url = `${backendUrl}/api/v1/auth/google`;
+          const url = `${backendUrl}/api/v1/auth/google/`;
           alert("POSTing to: " + url);
           const res = await fetch(url, {
             method: "POST",
