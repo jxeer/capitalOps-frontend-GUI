@@ -121,7 +121,7 @@ function Feature({ title, desc }: { title: string; desc: string }) {
 
 function GoogleSignInButton() {
   const { data: googleStatus } = useQuery<{ enabled: boolean }>({
-    queryKey: ["/api/auth/google/status"],
+    queryKey: ["/api/v1/auth/google/status"],
   });
 
   if (!googleStatus?.enabled) return null;

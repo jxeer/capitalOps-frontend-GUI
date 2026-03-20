@@ -1,8 +1,115 @@
 # CapitalOps Implementation Plan
 
-**Last Updated:** 2026-03-17  
-**Current Phase:** Final Summary - MVP Complete & Deployment Ready  
-**Status:** All Phases Complete - CapitalOps MVP Ready for Investor Demo 🎉
+**Last Updated:** 2026-03-20  
+**Current Phase:** Production Deployment Complete ✅  
+**Status:** Backend deployed to Railway, Frontend deployed to Vercel - Production Ready 🎉
+
+---
+
+## Deployment Summary (2026-03-20)
+
+### Infrastructure Deployed
+
+| Service | Platform | URL | Status |
+|---------|----------|-----|--------|
+| Backend API | Railway | `https://capialops-backend-api-production.up.railway.app` | ✅ Running |
+| PostgreSQL Database | Railway | Railway Managed | ✅ Connected |
+| Frontend GUI | Vercel | `https://capitalops-frontend-gui.vercel.app` | ✅ Deployed |
+
+### Environment Variables Configured
+
+**Railway Backend:**
+- `DATABASE_URL` = PostgreSQL connection string
+- `COMPAT_API_KEY` = `prod_capitalops_secure_key_2026`
+- `JWT_SECRET_KEY` = `prod_jwt_secret_2026_SECURE`
+- `FRONTEND_ORIGIN` = `*` (all origins for Vercel)
+
+**Vercel Frontend:**
+- `VITE_BACKEND_URL` = `https://capialops-backend-api-production.up.railway.app`
+- `VITE_COMPAT_API_KEY` = `prod_capitalops_secure_key_2026`
+
+### Backend Changes for Production
+
+**Files Modified:**
+- `app/__init__.py` - Added Railway detection for seed data
+- `app/routes/compat.py` - Added `/api/setup-admin`, `/api/seed`, `/api/debug-config` endpoints, fixed `/api/upload` for JSON base64, added `/api/login` and `/api/register` for JWT auth
+- `app/models.py` - Added `media` JSON column to Asset and Project models
+
+**New Endpoints:**
+- `POST /api/setup-admin` - Bootstrap admin user creation
+- `POST /api/seed` - Populate demo seed data
+- `GET /api/debug-config` - Debug configuration
+- `POST /api/login` - JWT authentication
+- `POST /api/register` - User registration
+- `POST /api/upload` - JSON base64 image upload
+
+### Frontend Changes for Production
+
+**Files Modified:**
+- `client/src/lib/queryClient.ts` - Added `X-API-Key` header, JWT Bearer token
+- `client/src/lib/s3.ts` - Added JWT Bearer token, base64 JSON upload
+- `client/src/hooks/use-auth.tsx` - Direct backend API calls with proper headers
+- `client/src/pages/projects.tsx` - Fixed `portfolioId` to integer, image lightbox, thumbnail display
+- `client/src/pages/assets.tsx` - Fixed `portfolioId` to integer, thumbnail display
+- `client/src/components/image-lightbox.tsx` - NEW: Image lightbox for viewing project photos
+
+### Bug Fixes Applied
+
+| Issue | Fix |
+|-------|-----|
+| Upload button not working | Added `type="button"` to prevent form submit |
+| Find button submitting form | Added `type="button"` |
+| Map blocked by browser | Replaced iframe with static map + OpenStreetMap link |
+| Login 403 Invalid API Key | Added `X-API-Key` header to all API requests |
+| Admin user not created | Added `/api/setup-admin` bootstrap endpoint |
+| Asset update 500 error | Fixed `location` dict handling and `media` JSON string parsing |
+| Project images not showing | Added thumbnail display on project/asset cards |
+| Image lightbox missing | Created `ImageLightbox` component |
+
+### Seed Data
+
+Admin credentials:
+- **Username:** `admin`
+- **Password:** `admin123`
+- **Role:** Sponsor Admin
+
+---
+
+## Recent Progress
+
+### Phase 4 Completion - Profile & Connections ✅
+
+**Date Completed:** 2026-03-17  
+**Status:** Phase 4 is COMPLETE. All profile features and connections system fully functional.
+
+**What Was Done:**
+
+**Backend Changes:**
+- Added `profile_image` column to User model in `app/models.py`
+- Updated Flask `/api/upload` endpoint in `app/routes/compat.py` to save files to `app/uploads/` directory
+- Added `PUT /api/user` endpoint to update user profile including profile image
+- Configured Flask to serve static files from `/uploads/` route in `app/__init__.py`
+- Files are saved when AWS S3 is not configured (local dev mode)
+- Profile image URL stored in database and persisted across restarts
+
+**Current Status:**
+- Profile images upload and persist to disk ✅
+- Images served via `/uploads/filename.jpg` ✅
+- Profile image URL saved to database ✅
+- Frontend Profile page displays uploaded images ✅
+
+**Files Modified (Backend):**
+- `app/models.py` - Added `profile_image` column to User model, included in `to_dict()`
+- `app/routes/compat.py` - Updated `/upload` endpoint to save files to disk, added `PUT /api/user` endpoint
+- `app/__init__.py` - Added `/uploads/<filename>` route to serve uploaded files statically
+
+**Backend Running:**
+- Flask on port 3001
+- Express on port 3000
+- SQLite database (local dev, no PostgreSQL needed)
+
+**Frontend Running:**
+- Vite on port 3000 (via tsx)
 
 ---
 
@@ -589,3 +696,140 @@ AWS_REGION=us-east-1
 
 
 ---
+
+---
+
+## Railway/Vercel Production Deployment (2026-03-20)
+
+### Infrastructure
+| Service | Platform | URL |
+|---------|----------|-----|
+| Backend API | Railway | `https://capialops-backend-api-production.up.railway.app` |
+| PostgreSQL | Railway | Managed |
+| Frontend | Vercel | `https://capitalops-frontend-gui.vercel.app` |
+
+### Environment Variables
+
+**Railway Backend:**
+- `DATABASE_URL` = PostgreSQL connection string
+- `COMPAT_API_KEY` = `prod_capitalops_secure_key_2026`
+- `JWT_SECRET_KEY` = `prod_jwt_secret_2026_SECURE`
+- `FRONTEND_ORIGIN` = `*`
+
+**Vercel Frontend:**
+- `VITE_BACKEND_URL` = Railway backend URL
+- `VITE_COMPAT_API_KEY` = `prod_capitalops_secure_key_2026`
+
+### Issues Resolved
+
+1. **SQLite vs PostgreSQL** - Proper DATABASE_URL handling
+2. **Missing API Key Header** - Added X-API-Key to all requests
+3. **Duplicate Upload Routes** - Commented out multipart route
+4. **Media JSON String** - Fixed update_asset/update_project
+5. **Location as Dict** - Extract address from dict
+6. **portfolioId as String** - Changed to integer
+
+### Admin Credentials
+- Username: `admin`
+- Password: `admin123`
+
+### Seed Commands
+```bash
+curl -X POST https://capialops-backend-api-production.up.railway.app/api/setup-admin
+curl -X POST https://capialops-backend-api-production.up.railway.app/api/seed
+```
+
+### Features Working
+- JWT authentication ✅
+- Media upload/save/view ✅
+- Image lightbox ✅
+- Project/Asset thumbnails ✅
+
+*Last updated: 2026-03-20*
+
+---
+
+## Post-MVP Enhancements (2026-03-20)
+
+### Priority 1: Authentication & User Management
+
+#### Google OAuth Sign-In
+- [ ] Enable Google Sign-In on Railway backend
+- [ ] Add `GOOGLE_OAUTH_CLIENT_ID` to Railway environment variables
+- [ ] Configure Google Cloud Console with production origins
+- [ ] Test Google Sign-In flow end-to-end
+- [ ] Add "Sign in with Google" button to login page
+
+#### Password Management
+- [ ] Add "Forgot Password" feature
+- [ ] Add "Reset Password" flow with email token
+- [ ] Add "Change Password" in user profile settings
+
+#### Data Permanence
+- [ ] Disable demo reset logic - ensure data persists
+- [ ] Remove any development-only seed triggers
+- [ ] Verify PostgreSQL data survives redeployments
+
+### Priority 2: Core Workflow Features
+
+#### User Search & Discovery
+- [ ] Verify `/api/users` endpoint works with proper auth
+- [ ] Test user search/filter functionality
+- [ ] Ensure user profiles show correct avatars and info
+
+#### Messaging System
+- [ ] Verify 1-on-1 messaging works end-to-end
+- [ ] Test message delivery and notifications
+- [ ] Check real-time updates (if implemented)
+
+#### Connection System
+- [ ] Test send/accept/decline connection requests
+- [ ] Verify connection status displays correctly
+- [ ] Check notification indicators
+
+### Priority 3: Polish & QA
+
+#### Bug Fixes
+- [ ] Fix any remaining glitches in navigation
+- [ ] Verify all CRUD operations work smoothly
+- [ ] Test on multiple browsers/devices
+
+#### UX Improvements
+- [ ] Loading states for all async operations
+- [ ] Empty state messages with helpful CTAs
+- [ ] Error handling with user-friendly messages
+
+### Priority 4: Documentation (Post-MVP)
+
+#### User Documentation
+- [ ] How to Use CapitalOps guide
+- [ ] Feature walkthrough for investors
+- [ ] Feature walkthrough for developers
+- [ ] FAQ section
+
+#### Tutorial System
+- [ ] Interactive tutorial for new users
+- [ ] Tooltips and contextual help
+
+---
+
+## Implementation Notes
+
+### Google OAuth Setup (Required)
+1. Go to Google Cloud Console → APIs & Services → Credentials
+2. Create OAuth 2.0 Client ID for web application
+3. Add authorized origins:
+   - `http://localhost:5173` (dev)
+   - `https://capitalops-frontend-gui.vercel.app` (prod)
+4. Copy Client ID to Railway environment variable `GOOGLE_OAUTH_CLIENT_ID`
+5. Redeploy backend
+
+### Forgot Password Setup (Required)
+- Requires email service integration (SendGrid, Mailgun, or SMTP)
+- Token-based reset flow with expiration
+
+### Data Storage
+- PostgreSQL on Railway - all data is permanent
+- No demo mode or auto-reset
+- Backups handled by Railway's automatic backup system
+
