@@ -121,23 +121,16 @@ function Feature({ title, desc }: { title: string; desc: string }) {
 
 function GoogleSignInButton() {
   const backendUrl = (import.meta.env as any).VITE_BACKEND_URL || "";
-  
-  const { data: googleStatus, isLoading } = useQuery<{ enabled: boolean; authUrl?: string }>({
-    queryKey: [`${backendUrl}/api/v1/auth/google/status`],
-    enabled: !!backendUrl,
-  });
-
-  if (isLoading || !googleStatus?.enabled) return null;
 
   const handleGoogleSignIn = async () => {
     try {
-      const res = await fetch(`${backendUrl}/api/v1/auth/google`);
+      const res = await fetch(`${backendUrl}/api/v1/auth/google/status`);
       const data = await res.json();
-      if (data.authUrl) {
+      if (data.enabled && data.authUrl) {
         window.location.href = data.authUrl;
       }
     } catch (e) {
-      console.error("Failed to get Google auth URL:", e);
+      console.error("Google sign-in error:", e);
     }
   };
 
