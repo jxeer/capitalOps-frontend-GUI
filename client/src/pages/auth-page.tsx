@@ -124,7 +124,7 @@ function GoogleSignInButton() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const res = await fetch(`${backendUrl}/api/v1/auth/google`);
+      const res = await fetch(`${backendUrl}/api/v1/auth/google/gauth`);
       const data = await res.json();
       if (data.authUrl) {
         window.location.href = data.authUrl;
