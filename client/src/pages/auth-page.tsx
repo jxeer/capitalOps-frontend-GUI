@@ -127,7 +127,6 @@ function GoogleSignInButton() {
   const [ready, setReady] = useState(false);
 
   const handleGoogleSignIn = async () => {
-    alert("Button clicked! Ready: " + ready);
     if (!ready) {
       toast({ title: "Google not ready", description: "Please wait and refresh", variant: "destructive" });
       return;
@@ -135,8 +134,11 @@ function GoogleSignInButton() {
     
     try {
       const { google } = window as any;
+      alert("About to call prompt...");
       google.accounts.id.prompt();
+      alert("Prompt called");
     } catch (e) {
+      alert("Error: " + e);
       toast({ title: "Google sign-in error", description: String(e), variant: "destructive" });
     }
   };
