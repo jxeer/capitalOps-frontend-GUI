@@ -134,22 +134,18 @@ function GoogleSignInButton() {
     google.accounts.id.initialize({
       client_id: googleClientId,
       callback: async (response: any) => {
-        alert("Callback fired! credential: " + (response.credential ? "yes" : "no"));
         if (!response.credential) {
           toast({ title: "No credential received", variant: "destructive" });
           return;
         }
         try {
           const url = `${backendUrl}/api/v1/auth/google`;
-          alert("Sending to: " + url);
           const res = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ credential: response.credential }),
           });
-          alert("Response: " + res.status);
           const data = await res.json();
-          alert("Data: " + JSON.stringify(data));
           if (data.accessToken) {
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("user", JSON.stringify(data.user));
@@ -163,27 +159,20 @@ function GoogleSignInButton() {
         }
       },
     });
-  }, [googleClientId, backendUrl, login, toast]);
 
-  const handleGoogleSignIn = () => {
-    const { google } = window as any;
-    if (google) {
-      try {
-        google.accounts.id.requestAnimationFrame(() => {
-          google.accounts.id.prompt();
-        });
-      } catch (e) {
-        alert("prompt error: " + e);
-      }
-    }
-  };
+    // Render the Google button directly
+    google.accounts.id.renderButton(
+      document.getElementById("google-signin-btn"),
+      { theme: "outline", size: "large", text: "signin_with", shape: "rectangular" }
+    );
+  }, [googleClientId, backendUrl, login, toast]);
 
   return (
     <Button
       variant="outline"
       className="w-full gap-2"
       data-testid="button-google-signin"
-      onClick={handleGoogleSignIn}
+      id="google-signin-btn"
     >
       <SiGoogle className="h-4 w-4" />
       Sign in with Google
