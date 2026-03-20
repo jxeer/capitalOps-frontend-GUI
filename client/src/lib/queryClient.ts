@@ -75,6 +75,7 @@ export const getQueryFn: <T>(options: {
     const token = localStorage.getItem("auth_token");
     const headers: Record<string, string> = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (API_KEY) headers["X-API-Key"] = API_KEY;
     const fullUrl = API_BASE + queryKey.join("/");
     const res = await fetch(fullUrl, {
       credentials: "include",
