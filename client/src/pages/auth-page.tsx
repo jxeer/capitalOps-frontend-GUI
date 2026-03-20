@@ -124,10 +124,12 @@ function GoogleSignInButton() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const res = await fetch(`${backendUrl}/api/v1/auth/google/status`);
+      const res = await fetch(`${backendUrl}/api/v1/auth/google`);
       const data = await res.json();
-      if (data.enabled) {
-        window.location.href = `${backendUrl}/api/v1/auth/google`;
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      } else if (data.error) {
+        console.error("Google auth error:", data.error);
       }
     } catch (e) {
       console.error("Google sign-in error:", e);
