@@ -120,15 +120,18 @@ function Feature({ title, desc }: { title: string; desc: string }) {
 }
 
 function GoogleSignInButton() {
-  const { data: googleStatus } = useQuery<{ enabled: boolean; authUrl?: string }>({
-    queryKey: ["/api/v1/auth/google/status"],
+  const backendUrl = (import.meta.env as any).VITE_BACKEND_URL || "";
+  
+  const { data: googleStatus, isLoading } = useQuery<{ enabled: boolean; authUrl?: string }>({
+    queryKey: [`${backendUrl}/api/v1/auth/google/status`],
+    enabled: !!backendUrl,
   });
 
-  if (!googleStatus?.enabled) return null;
+  if (isLoading || !googleStatus?.enabled) return null;
 
   const handleGoogleSignIn = async () => {
     try {
-      const res = await fetch(`${(import.meta.env as any).VITE_BACKEND_URL || ""}/api/v1/auth/google`);
+      const res = await fetch(`${backendUrl}/api/v1/auth/google`);
       const data = await res.json();
       if (data.authUrl) {
         window.location.href = data.authUrl;
