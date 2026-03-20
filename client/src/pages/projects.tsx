@@ -163,7 +163,7 @@ export default function Projects() {
    */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = { ...form, portfolioId: "port-001", budgetTotal: Number(form.budgetTotal) || 0, budgetActual: Number(form.budgetActual) || 0, location: location || undefined, media: mediaPreviews };
+    const payload = { ...form, portfolioId: 1, budgetTotal: Number(form.budgetTotal) || 0, budgetActual: Number(form.budgetActual) || 0, location: location || undefined, media: mediaPreviews };
     if (editing) { updateMutation.mutate({ id: editing.id, data: payload }); } else { createMutation.mutate(payload); }
   };
 
