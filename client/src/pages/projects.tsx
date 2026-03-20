@@ -296,6 +296,27 @@ export default function Projects() {
                   </div>
                 )}
 
+                {project.media && project.media.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Photos</p>
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {project.media.slice(0, 4).map((media, idx) => (
+                        <img
+                          key={idx}
+                          src={media.url}
+                          alt={media.name || "Project photo"}
+                          className="h-16 w-16 object-cover rounded-lg shrink-0"
+                        />
+                      ))}
+                      {project.media.length > 4 && (
+                        <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center shrink-0 text-xs text-muted-foreground">
+                          +{project.media.length - 4}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="p-2.5 rounded-lg bg-accent/40 space-y-0.5">
                     <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Spent</p>
