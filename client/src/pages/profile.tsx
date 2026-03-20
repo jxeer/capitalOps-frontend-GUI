@@ -91,7 +91,7 @@ export default function Profile() {
     if (avatarFile) {
       setIsUploading(true);
       try {
-        const { url } = await uploadToS3(avatarFile, "avatar", String(user.id));
+        const { url } = await uploadToS3(avatarFile);
         profileImage = url;
       } catch (err: any) {
         toast({ title: "Failed to upload avatar", description: err.message, variant: "destructive" });
