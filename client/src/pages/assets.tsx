@@ -261,6 +261,24 @@ export default function Assets() {
               </div>
 
               <CardContent className="p-5 pt-4 space-y-4">
+                {asset.media && asset.media.length > 0 && (
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {asset.media.slice(0, 4).map((media, idx) => (
+                      <img
+                        key={idx}
+                        src={media.url}
+                        alt={media.name || "Asset photo"}
+                        className="h-16 w-16 object-cover rounded-lg shrink-0"
+                      />
+                    ))}
+                    {asset.media.length > 4 && (
+                      <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center shrink-0 text-xs text-muted-foreground">
+                        +{asset.media.length - 4}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-3 gap-3">
                   <div className="p-2.5 rounded-lg bg-accent/40 space-y-0.5 text-center">
                     <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Type</p>
