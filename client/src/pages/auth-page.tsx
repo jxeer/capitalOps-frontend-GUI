@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -124,57 +124,66 @@ function GoogleSignInButton() {
   const googleClientId = (import.meta.env as any).VITE_GOOGLE_CLIENT_ID || "";
   const { login } = useAuth();
   const { toast } = useToast();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!googleClientId || !backendUrl) {
+      return;
+    }
+    if (!(window as any).google) {
+      const timer = setInterval(() => {
+        if ((window as any).google) {
+          clearInterval(timer);
+          (window as any).google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: () => {},
+          });
+          setReady(true);
+        }
+      }, 100);
+      return () => clearInterval(timer);
+    }
+    (window as any).google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: () => {},
+    });
+    setReady(true);
+  }, [googleClientId, backendUrl]);
 
   const handleGoogleSignIn = async () => {
-    console.log("Google sign-in clicked");
-    console.log("backendUrl:", backendUrl);
-    console.log("googleClientId:", googleClientId);
+    if (!ready) {
+      toast({ title: "Google not ready", description: "Please wait a moment and try again", variant: "destructive" });
+      return;
+    }
     
-    if (!googleClientId) {
-      toast({ title: "Google sign-in not configured", description: "VITE_GOOGLE_CLIENT_ID is not set", variant: "destructive" });
-      return;
-    }
-
-    if (!backendUrl) {
-      toast({ title: "Backend not configured", description: "VITE_BACKEND_URL is not set", variant: "destructive" });
-      return;
-    }
-
-    const { google } = window as any;
-    if (!google) {
-      toast({ title: "Google SDK not loaded", description: "Please refresh and try again", variant: "destructive" });
-      return;
-    }
-
-    google.accounts.id.initialize({
-      client_id: googleClientId,
-      callback: async (response: any) => {
-        console.log("Google credential received:", response.credential ? "yes" : "no");
-        try {
-          const res = await fetch(`${backendUrl}/api/v1/auth/google`, {
+    try {
+      const { google } = window as any;
+      google.accounts.id.prompt((response: any) => {
+        if (response.credential) {
+          fetch(`${backendUrl}/api/v1/auth/google`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ credential: response.credential }),
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.accessToken) {
+              localStorage.setItem("accessToken", data.accessToken);
+              localStorage.setItem("user", JSON.stringify(data.user));
+              login(data.user, data.accessToken);
+              window.location.href = "/";
+            } else if (data.error) {
+              toast({ title: "Sign-in failed", description: data.error, variant: "destructive" });
+            }
+          })
+          .catch(e => {
+            toast({ title: "Network error", description: String(e), variant: "destructive" });
           });
-          console.log("Backend response status:", res.status);
-          const data = await res.json();
-          console.log("Backend response:", data);
-          if (data.accessToken) {
-            localStorage.setItem("accessToken", data.accessToken);
-            localStorage.setItem("user", JSON.stringify(data.user));
-            login(data.user, data.accessToken);
-            window.location.href = "/";
-          } else if (data.error) {
-            toast({ title: "Sign-in failed", description: data.error, variant: "destructive" });
-          }
-        } catch (e) {
-          console.error("Fetch error:", e);
-          toast({ title: "Sign-in error", description: String(e), variant: "destructive" });
         }
-      },
-    });
-
-    google.accounts.id.prompt();
+      });
+    } catch (e) {
+      toast({ title: "Google sign-in error", description: String(e), variant: "destructive" });
+    }
   };
 
   return (
@@ -183,9 +192,10 @@ function GoogleSignInButton() {
       className="w-full gap-2"
       data-testid="button-google-signin"
       onClick={handleGoogleSignIn}
+      disabled={!ready}
     >
       <SiGoogle className="h-4 w-4" />
-      Sign in with Google
+      {ready ? "Sign in with Google" : "Loading..."}
     </Button>
   );
 }
