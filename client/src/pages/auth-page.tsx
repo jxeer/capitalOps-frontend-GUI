@@ -124,76 +124,48 @@ function GoogleSignInButton() {
   const googleClientId = (import.meta.env as any).VITE_GOOGLE_CLIENT_ID || "";
   const { login } = useAuth();
   const { toast } = useToast();
-  const [ready, setReady] = useState(false);
-
-  const handleGoogleSignIn = async () => {
-    if (!ready) {
-      toast({ title: "Google not ready", description: "Please wait and refresh", variant: "destructive" });
-      return;
-    }
-    
-    try {
-      const { google } = window as any;
-      try {
-        google.accounts.id.prompt();
-      } catch (e) {
-        alert("prompt failed: " + e);
-        // Fallback to renderButton
-        const btn = document.createElement("div");
-        document.body.appendChild(btn);
-        google.accounts.id.renderButton(btn, { theme: "outline", size: "large", text: "signin_with" });
-        btn.click();
-        document.body.removeChild(btn);
-      }
-    } catch (e) {
-      alert("Error: " + e);
-      toast({ title: "Google sign-in error", description: String(e), variant: "destructive" });
-    }
-  };
 
   useEffect(() => {
-    if (!googleClientId || !backendUrl) {
-      console.log("Missing config:", { googleClientId, backendUrl });
-      return;
-    }
+    if (!googleClientId || !backendUrl) return;
     
-    const checkGoogle = () => {
-      if ((window as any).google) {
-        (window as any).google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: async (response: any) => {
-            if (!response.credential) {
-              toast({ title: "No credential received", variant: "destructive" });
-              return;
-            }
-            try {
-              const res = await fetch(`${backendUrl}/api/v1/auth/google`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ credential: response.credential }),
-              });
-              const data = await res.json();
-              if (data.accessToken) {
-                localStorage.setItem("accessToken", data.accessToken);
-                localStorage.setItem("user", JSON.stringify(data.user));
-                login(data.user, data.accessToken);
-                window.location.href = "/";
-              } else if (data.error) {
-                toast({ title: "Sign-in failed", description: data.error, variant: "destructive" });
-              }
-            } catch (e) {
-              toast({ title: "Network error", description: String(e), variant: "destructive" });
-            }
-          },
-        });
-        setReady(true);
-      }
-    };
-    
-    checkGoogle();
-    const interval = setInterval(checkGoogle, 500);
-    return () => clearInterval(interval);
+    const { google } = window as any;
+    if (!google) return;
+
+    google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: async (response: any) => {
+        if (!response.credential) {
+          toast({ title: "No credential received", variant: "destructive" });
+          return;
+        }
+        try {
+          const res = await fetch(`${backendUrl}/api/v1/auth/google`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ credential: response.credential }),
+          });
+          const data = await res.json();
+          if (data.accessToken) {
+            localStorage.setItem("accessToken", data.accessToken);
+            localStorage.setItem("user", JSON.stringify(data.user));
+            login(data.user, data.accessToken);
+            window.location.href = "/";
+          } else if (data.error) {
+            toast({ title: "Sign-in failed", description: data.error, variant: "destructive" });
+          }
+        } catch (e) {
+          toast({ title: "Network error", description: String(e), variant: "destructive" });
+        }
+      },
+    });
   }, [googleClientId, backendUrl, login, toast]);
+
+  const handleGoogleSignIn = () => {
+    const { google } = window as any;
+    if (google) {
+      google.accounts.id.prompt();
+    }
+  };
 
   return (
     <Button
@@ -201,10 +173,9 @@ function GoogleSignInButton() {
       className="w-full gap-2"
       data-testid="button-google-signin"
       onClick={handleGoogleSignIn}
-      disabled={!ready}
     >
       <SiGoogle className="h-4 w-4" />
-      {ready ? "Sign in with Google" : "Loading..."}
+      Sign in with Google
     </Button>
   );
 }
