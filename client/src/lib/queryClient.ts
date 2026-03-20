@@ -14,6 +14,7 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { uploadToS3 } from "./s3";
 
 const API_BASE = (import.meta.env as any).VITE_BACKEND_URL || "";
+const API_KEY = (import.meta.env as any).VITE_COMPAT_API_KEY || "";
 
 /**
  * Throws error if response status is not OK (2xx)
@@ -43,6 +44,7 @@ export async function apiRequest(
   const token = localStorage.getItem("auth_token");
   const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (API_KEY) headers["X-API-Key"] = API_KEY;
   const fullUrl = API_BASE + url;
   const res = await fetch(fullUrl, {
     method,
