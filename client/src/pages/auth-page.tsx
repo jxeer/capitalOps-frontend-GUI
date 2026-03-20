@@ -139,12 +139,16 @@ function GoogleSignInButton() {
           return;
         }
         try {
-          const res = await fetch(`${backendUrl}/api/v1/auth/google`, {
+          const url = `${backendUrl}/api/v1/auth/google`;
+          toast({ title: "Sending to...", description: url });
+          const res = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ credential: response.credential }),
           });
+          toast({ title: "Response status", description: String(res.status) });
           const data = await res.json();
+          toast({ title: "Response data", description: JSON.stringify(data) });
           if (data.accessToken) {
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("user", JSON.stringify(data.user));
