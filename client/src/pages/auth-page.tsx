@@ -163,19 +163,18 @@ function GoogleSignInButton() {
         }
       },
     });
-    
-    // Also listen for cancel/errors
-    google.accounts.id.prompt((notification: any) => {
-      if (notification.isNotDisplayed() || notification.isSkippedUri()) {
-        alert("Prompt not displayed or skipped");
-      }
-    });
   }, [googleClientId, backendUrl, login, toast]);
 
   const handleGoogleSignIn = () => {
     const { google } = window as any;
     if (google) {
-      google.accounts.id.prompt();
+      try {
+        google.accounts.id.requestAnimationFrame(() => {
+          google.accounts.id.prompt();
+        });
+      } catch (e) {
+        alert("prompt error: " + e);
+      }
     }
   };
 
