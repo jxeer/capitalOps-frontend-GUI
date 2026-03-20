@@ -7,6 +7,12 @@ import { useLocation } from "wouter";
 const API_BASE = (import.meta.env as any).VITE_BACKEND_URL || "";
 const API_KEY = (import.meta.env as any).VITE_COMPAT_API_KEY || "";
 
+function getAuthHeaders() {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (API_KEY) headers["X-API-Key"] = API_KEY;
+  return headers;
+}
+
 type AuthUser = {
   id: string;
   username: string;
@@ -57,8 +63,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: user, isLoading } = useQuery<AuthUser | null>({
     queryKey: ["/api/user"],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/user`, { credentials: "include" });
-      if (res.status === 401) return null;
+      const token = localStorage.getItem("auth_token");
+      const headers = getAuthHeaders();
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const res = await fetch(`${API_BASE}/api/user`, { 
+        headers,
+        credentials: "include" 
+      });
+      if (res.status === 401) {
+        localStorage.removeItem("auth_token");
+        return null;
+      }
       if (!res.ok) throw new Error("Failed to fetch user");
       return res.json();
     },
@@ -68,8 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (API_KEY) headers["X-API-Key"] = API_KEY;
+      const headers = getAuthHeaders();
       const res = await fetch(`${API_BASE}/api/login`, {
         method: "POST",
         headers,
@@ -83,6 +97,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return res.json();
     },
     onSuccess: (data) => {
+      if (data.accessToken) {
+        localStorage.setItem("auth_token", data.accessToken);
+      }
       queryClient.setQueryData(["/api/user"], data.user || data);
       queryClient.invalidateQueries();
       setLocation("/dashboard");
@@ -94,8 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (API_KEY) headers["X-API-Key"] = API_KEY;
+      const headers = getAuthHeaders();
       const res = await fetch(`${API_BASE}/api/register`, {
         method: "POST",
         headers,
@@ -109,6 +125,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return res.json();
     },
     onSuccess: (data) => {
+      if (data.accessToken) {
+        localStorage.setItem("auth_token", data.accessToken);
+      }
       queryClient.setQueryData(["/api/user"], data.user || data);
       queryClient.invalidateQueries();
       setLocation("/dashboard");
@@ -120,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      localStorage.removeItem("auth_token");
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
