@@ -6,7 +6,7 @@
  */
 
 const API_BASE = (import.meta.env as any).VITE_BACKEND_URL || "";
-const COMPAT_API_KEY = (import.meta.env as any).VITE_COMPAT_API_KEY || "";
+const API_KEY = (import.meta.env as any).VITE_COMPAT_API_KEY || "";
 
 /**
  * Upload a file to the backend's /api/upload endpoint.
@@ -28,7 +28,9 @@ export async function uploadToS3(
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
         };
-        if (COMPAT_API_KEY) headers["X-API-Key"] = COMPAT_API_KEY;
+        if (API_KEY) headers["X-API-Key"] = API_KEY;
+        const token = localStorage.getItem("auth_token");
+        if (token) headers["Authorization"] = `Bearer ${token}`;
 
         const res = await fetch(`${API_BASE}/api/upload`, {
           method: "POST",
