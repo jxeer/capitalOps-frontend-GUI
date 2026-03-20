@@ -120,22 +120,30 @@ function Feature({ title, desc }: { title: string; desc: string }) {
 }
 
 function GoogleSignInButton() {
-  const { data: googleStatus } = useQuery<{ enabled: boolean }>({
+  const { data: googleStatus } = useQuery<{ enabled: boolean; authUrl?: string }>({
     queryKey: ["/api/v1/auth/google/status"],
   });
 
   if (!googleStatus?.enabled) return null;
 
-  const backendUrl = (import.meta.env as any).VITE_BACKEND_URL || "";
+  const handleGoogleSignIn = async () => {
+    try {
+      const res = await fetch(`${(import.meta.env as any).VITE_BACKEND_URL || ""}/api/v1/auth/google`);
+      const data = await res.json();
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+    } catch (e) {
+      console.error("Failed to get Google auth URL:", e);
+    }
+  };
 
   return (
     <Button
       variant="outline"
       className="w-full gap-2"
       data-testid="button-google-signin"
-      onClick={() => {
-        window.location.href = `${backendUrl}/api/v1/auth/google`;
-      }}
+      onClick={handleGoogleSignIn}
     >
       <SiGoogle className="h-4 w-4" />
       Sign in with Google
