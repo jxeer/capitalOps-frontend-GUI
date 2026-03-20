@@ -150,6 +150,7 @@ function GoogleSignInButton() {
           const data = await res.json();
           alert("Response data: " + JSON.stringify(data).substring(0, 200));
           if (data.accessToken) {
+            alert("Login success! Token: " + data.accessToken.substring(0, 50) + "...");
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("user", JSON.stringify(data.user));
             login(data.user, data.accessToken);
