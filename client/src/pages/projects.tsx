@@ -118,7 +118,7 @@ export default function Projects() {
     setEditing(project);
     setForm({ assetId: project.assetId, phase: project.phase, startDate: project.startDate, targetCompletion: project.targetCompletion, budgetTotal: String(project.budgetTotal), budgetActual: String(project.budgetActual), status: project.status, pmAssigned: project.pmAssigned, description: project.description || "" });
     setLocation(undefined);
-    setMediaPreviews([]);
+    setMediaPreviews(project.media || []);
     setOpen(true);
   };
   
