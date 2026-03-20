@@ -150,10 +150,11 @@ function GoogleSignInButton() {
           const data = await res.json();
           alert("Response data: " + JSON.stringify(data).substring(0, 200));
           if (data.accessToken) {
-            alert("Login success! Token: " + data.accessToken.substring(0, 50) + "...");
+            // Store token in the format expected by the app
+            localStorage.setItem("auth_token", data.accessToken);
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("user", JSON.stringify(data.user));
-            login(data.user, data.accessToken);
+            // Reload to let the auth system pick up the new token
             window.location.href = "/";
           } else if (data.error) {
             toast({ title: "Sign-in failed", description: data.error, variant: "destructive" });
