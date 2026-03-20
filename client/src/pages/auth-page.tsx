@@ -127,6 +127,7 @@ function GoogleSignInButton() {
   const [ready, setReady] = useState(false);
 
   const handleGoogleSignIn = async () => {
+    alert("Button clicked! Ready: " + ready);
     if (!ready) {
       toast({ title: "Google not ready", description: "Please wait and refresh", variant: "destructive" });
       return;
