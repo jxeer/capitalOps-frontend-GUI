@@ -121,52 +121,60 @@ function Feature({ title, desc }: { title: string; desc: string }) {
 
 function GoogleSignInButton() {
   const backendUrl = (import.meta.env as any).VITE_BACKEND_URL || "";
+  const googleClientId = (import.meta.env as any).VITE_GOOGLE_CLIENT_ID || "";
   const { login } = useAuth();
   const { toast } = useToast();
 
   const handleGoogleSignIn = async () => {
-    try {
-      const clientId = (import.meta.env as any).VITE_GOOGLE_CLIENT_ID;
-      if (!clientId) {
-        toast({ title: "Google sign-in not configured", variant: "destructive" });
-        return;
-      }
-
-      const { google } = window as any;
-      if (!google) {
-        toast({ title: "Google SDK not loaded", variant: "destructive" });
-        return;
-      }
-
-      google.accounts.id.initialize({
-        client_id: clientId,
-        callback: async (response: any) => {
-          try {
-            const res = await fetch(`${backendUrl}/api/v1/auth/google`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ credential: response.credential }),
-            });
-            const data = await res.json();
-            if (data.accessToken) {
-              localStorage.setItem("accessToken", data.accessToken);
-              localStorage.setItem("user", JSON.stringify(data.user));
-              login(data.user, data.accessToken);
-              window.location.href = "/";
-            } else if (data.error) {
-              toast({ title: "Sign-in failed", description: data.error, variant: "destructive" });
-            }
-          } catch (e) {
-            toast({ title: "Sign-in error", description: String(e), variant: "destructive" });
-          }
-        },
-      });
-
-      google.accounts.id.prompt();
-    } catch (e) {
-      console.error("Google sign-in error:", e);
-      toast({ title: "Google sign-in failed", variant: "destructive" });
+    console.log("Google sign-in clicked");
+    console.log("backendUrl:", backendUrl);
+    console.log("googleClientId:", googleClientId);
+    
+    if (!googleClientId) {
+      toast({ title: "Google sign-in not configured", description: "VITE_GOOGLE_CLIENT_ID is not set", variant: "destructive" });
+      return;
     }
+
+    if (!backendUrl) {
+      toast({ title: "Backend not configured", description: "VITE_BACKEND_URL is not set", variant: "destructive" });
+      return;
+    }
+
+    const { google } = window as any;
+    if (!google) {
+      toast({ title: "Google SDK not loaded", description: "Please refresh and try again", variant: "destructive" });
+      return;
+    }
+
+    google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: async (response: any) => {
+        console.log("Google credential received:", response.credential ? "yes" : "no");
+        try {
+          const res = await fetch(`${backendUrl}/api/v1/auth/google`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ credential: response.credential }),
+          });
+          console.log("Backend response status:", res.status);
+          const data = await res.json();
+          console.log("Backend response:", data);
+          if (data.accessToken) {
+            localStorage.setItem("accessToken", data.accessToken);
+            localStorage.setItem("user", JSON.stringify(data.user));
+            login(data.user, data.accessToken);
+            window.location.href = "/";
+          } else if (data.error) {
+            toast({ title: "Sign-in failed", description: data.error, variant: "destructive" });
+          }
+        } catch (e) {
+          console.error("Fetch error:", e);
+          toast({ title: "Sign-in error", description: String(e), variant: "destructive" });
+        }
+      },
+    });
+
+    google.accounts.id.prompt();
   };
 
   return (
