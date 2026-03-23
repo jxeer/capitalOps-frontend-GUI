@@ -1,8 +1,8 @@
 # CapitalOps Implementation Plan
 
-**Last Updated:** 2026-03-20  
-**Current Phase:** Production Deployment Complete ✅  
-**Status:** Backend deployed to Railway, Frontend deployed to Vercel - Production Ready 🎉
+**Last Updated:** 2026-03-23  
+**Current Phase:** Production Deployment + Security Hardening 🔄  
+**Status:** Backend deployed to Railway, Frontend deployed to Vercel - OAuth & Data Isolation Working 🎉
 
 ---
 
@@ -832,4 +832,199 @@ curl -X POST https://capialops-backend-api-production.up.railway.app/api/seed
 - PostgreSQL on Railway - all data is permanent
 - No demo mode or auto-reset
 - Backups handled by Railway's automatic backup system
+
+---
+
+## OAuth & Data Isolation Fixes (2026-03-23)
+
+**Date Completed:** 2026-03-23  
+**Status:** Google OAuth working, User data isolation implemented ✅
+
+### OAuth Issues Resolved
+
+The Google OAuth flow had multiple issues during deployment:
+
+| Issue | Root Cause | Fix |
+|-------|------------|-----|
+| `/api/v1/auth/google` 404 | Route was `/google/google` not `/google` | Changed route to `/` in blueprint |
+| `redirect_uri_mismatch` | Flask using `http://` but Google required `https://` | Force `https://` for Railway |
+| `redirect_uri_mismatch` (http only) | Google only had http URI configured | Added https URI to Google Cloud Console |
+| `client_secret` missing | Backend didn't have `GOOGLE_OAUTH_CLIENT_SECRET` | Switched to Google Identity Services (GIS) - browser-side JWT validation |
+| Token not accepted | `JWT_SECRET_KEY` changed after initial deploy | Consistent JWT_SECRET_KEY set in Railway |
+| Auth callback not found | Callback endpoint missing | Added `/callback` route |
+
+**Current Google OAuth Flow:**
+1. User clicks "Sign in with Google" on frontend
+2. Google Identity Services library loads in browser
+3. User authenticates with Google directly in browser
+4. Google returns `credential` (JWT ID token) to frontend
+5. Frontend sends `credential` to `/api/v1/auth/google` POST
+6. Backend validates token and creates/updates user
+7. Backend returns JWT for session
+
+### User Data Isolation Implemented
+
+**Problem:** All users saw the SAME data - no privacy between users.
+
+**Solution:** User-scoped data isolation
+
+**Models Updated:**
+- `Portfolio` - Added `user_id` foreign key to `users`
+- `Investor` - Added `user_id` foreign key to `users`
+
+**Database Migrations:**
+- Added `user_id` column to `portfolios` table
+- Added `user_id` column to `investors` table
+
+**API Changes:**
+All GET endpoints now filter by user's portfolio:
+- `/api/portfolios` - Returns user's portfolios only
+- `/api/assets` - Returns user's assets only
+- `/api/projects` - Returns user's projects only
+- `/api/deals` - Returns user's deals only
+- `/api/investors` - Returns user's investors only
+- `/api/allocations` - Returns user's allocations only
+- `/api/milestones` - Returns user's milestones only
+- `/api/vendors` - Returns user's vendors only
+- `/api/work-orders` - Returns user's work orders only
+- `/api/risk-flags` - Returns user's risk flags only
+- `/api/dashboard/stats` - Returns user's stats only
+
+**Graceful Fallback:**
+- Authenticated user with no data → Empty dashboard
+- Unauthenticated user → Global seed data (for public demo)
+
+### Demo Data Flow
+
+| User Type | Dashboard | How |
+|-----------|----------|-----|
+| Admin (admin@capitalops.io) | Demo data | Already seeded |
+| Google user (julian.xeer@gmail.com) | Demo data | Already seeded |
+| New user (any new signup) | Empty | No seed data auto-loaded |
+| Unauthenticated visitor | Global seed data | Fallback mode |
+
+**To populate demo data for a user:**
+```bash
+curl -X POST https://capialops-backend-api-production.up.railway.app/api/full-seed \
+  -H "Authorization: Bearer USER_TOKEN"
+```
+
+---
+
+## Security & Production Readiness
+
+### Completed ✅
+
+| Item | Status | Notes |
+|------|--------|-------|
+| User authentication | ✅ Complete | JWT + Google OAuth |
+| User data isolation | ✅ Complete | Users only see their own data |
+| HTTPS/TLS | ✅ Complete | Railway + Vercel provide |
+| SQL injection protection | ✅ Complete | SQLAlchemy ORM |
+| API key auth | ✅ Complete | X-API-Key header |
+| PostgreSQL database | ✅ Complete | Railway managed |
+
+### Immediate Action Items 🔴
+
+| Item | Priority | Effort | Notes |
+|------|----------|---------|-------|
+| **Verify Railway PostgreSQL backups** | HIGH | 5 min | Check Railway dashboard for backup settings |
+| **Configure AWS S3 for file uploads** | HIGH | 2-4 hrs | Currently saves to disk (ephemeral!) |
+| **Move secrets to Railway env vars** | HIGH | 10 min | Ensure no secrets in code |
+
+### File Upload Issue (CRITICAL)
+
+**Current State:** Files upload to `backend/app/uploads/` on Railway disk
+**Problem:** Railway containers are ephemeral - files LOST on redeploy!
+
+**Fix Required:**
+1. Create AWS S3 bucket (capitalops-uploads-prod)
+2. Add to Railway: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET_NAME`
+3. Uncomment S3 code in `backend/app/routes/uploads.py`
+4. Update `client/src/lib/s3.ts` to use production bucket
+
+### Short Term (1-2 weeks) 🟡
+
+| Item | Priority | Effort | Dependencies |
+|------|----------|---------|-------------|
+| **Forgot Password** | MEDIUM | 2-4 hrs | Requires email service (SendGrid/Mailgun/SES) |
+| Add "Load Demo Data" button | MEDIUM | 1 hr | None |
+| Rate limiting on auth endpoints | MEDIUM | 1 hr | None |
+
+### Future Enhancements 🟢
+
+| Item | Priority | Effort | Dependencies |
+|------|----------|---------|-------------|
+| **Multi-Factor Authentication (MFA)** | HIGH | 1-2 days | None |
+| Security audit | MEDIUM | 4-8 hrs | Third-party security firm |
+| CSP headers | LOW | 2 hrs | None |
+| Audit logging | LOW | 4 hrs | None |
+| Clerk migration | LOW | 2-4 hrs | Clerk account ($0-25/mo) |
+
+---
+
+## Forgot Password Implementation
+
+**Requirements:**
+- Email service (SendGrid, Mailgun, or AWS SES)
+- Verified sender email/domain
+
+**Steps to Enable:**
+1. Create SendGrid/Mailgun account (free tiers available)
+2. Add SMTP credentials to Railway:
+   - `SMTP_HOST`
+   - `SMTP_PORT`
+   - `SMTP_USER`
+   - `SMTP_PASSWORD`
+   - `SMTP_FROM_EMAIL`
+3. I can implement the backend flow:
+   - `POST /api/forgot-password` - Send reset email
+   - `POST /api/reset-password` - Set new password
+
+---
+
+## MFA Implementation
+
+**Options:**
+1. **TOTP** (Google Authenticator, Authy) - Most secure, free
+2. **SMS** (Twilio) - Easier UX but costs money
+
+**What's needed:**
+- User enrollment flow (enable MFA button)
+- QR code generation for TOTP
+- 6-digit code verification
+- Backend TOTP secret storage
+
+---
+
+## Data Privacy Compliance
+
+**Current Status:**
+- ✅ User data isolation working
+- ✅ Users only see their own portfolios/assets/projects/deals
+- ⚠️ File uploads NOT yet user-scoped (S3 issue above)
+
+**Consider for GDPR/CCPA:**
+- [ ] Data export endpoint (user can download their data)
+- [ ] Data deletion endpoint (user can delete their account)
+- [ ] Consent checkboxes on signup
+- [ ] Privacy policy page
+- [ ] Terms of service page
+
+---
+
+## Railway PostgreSQL Backups
+
+**To verify backup settings:**
+1. Go to https://railway.app/dashboard
+2. Select your project → PostgreSQL database
+3. Click **Backups** tab
+4. Verify:
+   - [ ] Automatic backups enabled
+   - [ ] Backup frequency (daily/hourly)
+   - [ ] Point-in-time recovery enabled
+   - [ ] Retention period (7 days? 30 days?)
+
+**Railway Free Tier:** 1 backup per day, 3 day retention  
+**Railway Pro Tier:** Configurable, longer retention
 
