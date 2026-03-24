@@ -73,11 +73,67 @@ CapitalOps has been developed over several phases, all now complete:
 | 2 | Visual Features (S3 uploads, Maps, Media Gallery) | 2026-03-16 |
 | 3 | Connections & Messaging (1-on-1 conversations) | 2026-03-16 |
 | 4 | Profile Enhancement (image upload, UI polish) | 2026-03-17 |
-| 5 | Vendor Ranking (performance tracking) | Planned |
+| 5 | Vendor Ranking (performance tracking) | 2026-03-17 |
 | 6 | UI/UX Polish (glassmorphism, animations, branding) | 2026-03-17 |
 | 7 | Dashboard & Analytics (KPIs, charts) | 2026-03-17 |
 | 8 | Railway/Vercel Production Deployment | 2026-03-20 |
 | 9 | Google OAuth & Data Isolation Fixes | 2026-03-23 |
+
+### Phase 1 - Profile Management (2026-03-16)
+- Extended User schema with profileType (investor/vendor/developer) and profileStatus
+- Updated OAuth flow to auto-create profiles on Google sign-up
+- Added profile menu in header with user avatar
+- Created Profile page at /profile with edit capability
+
+### Phase 2 - Visual Features (2026-03-16)
+- AWS S3 integration for photo/video uploads
+- MediaGallery component with upload/remove functionality
+- Google Maps integration for asset location tracking
+- Assets page updated with media & location
+- Projects page updated with media & location
+
+### Phase 3 - Connections & Messaging (2026-03-16)
+- Connection request system (send, accept, decline requests)
+- Messaging system (1-on-1 conversations)
+- Connections page with tabbed interface
+- Professional "Connections" terminology
+
+### Phase 4 - Profile Enhancement (2026-03-17)
+- Profile image upload using S3 integration
+- Comprehensive user profile schema with 20+ fields
+- User discovery search (global & filtered)
+- UI polish for profile images and avatars
+
+### Phase 5 - Vendor Ranking (2026-03-17)
+- Vendor performance tracking and scoring
+- Rating system for vendors
+
+### Phase 6 - UI/UX Polish (2026-03-17)
+- Branding splash page with hero, stats, features sections
+- Glassmorphism effect on dashboard cards
+- Interactive animations (pulse, ping, fade-in)
+- Wealth color palette (dark blue, emerald, amber)
+- Responsive design for demo (1024px iPad, mobile)
+
+### Phase 7 - Dashboard & Analytics (2026-03-17)
+- Dashboard page with key metrics and KPIs
+- Assets overview with portfolio monitoring
+- Projects tracking with milestone management
+- Investor portal for allocations
+
+### Phase 8 - Railway/Vercel Deployment (2026-03-20)
+- Backend on Railway with PostgreSQL
+- Frontend on Vercel
+- JWT authentication working
+- Media upload/save/view working
+- Image lightbox component
+
+### Phase 9 - Google OAuth & Data Isolation (2026-03-23)
+- Fixed Google OAuth redirect_uri issues
+- Switched to Google Identity Services (browser-side JWT)
+- Implemented user-scoped data isolation
+- Users only see their own portfolios/assets/projects/deals
+- Graceful fallback for unauthenticated users
 
 ### Key Accomplishments
 
