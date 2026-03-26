@@ -33,6 +33,8 @@ import InvestorPortal from "@/pages/investor-portal";
 import Profile from "@/pages/profile";
 import Connections from "@/pages/connections";
 import AuthPage from "@/pages/auth-page";
+import ForgotPasswordPage from "@/pages/forgot-password-page";
+import ResetPasswordPage from "@/pages/reset-password-page";
 import Splash from "@/pages/splash";
 
 
@@ -186,6 +188,16 @@ export default function App() {
             <Route path="/auth">
               <AuthProvider>
                 <AuthPage />
+              </AuthProvider>
+            </Route>
+            <Route path="/auth/forgot-password">
+              <AuthProvider>
+                <ForgotPasswordPage />
+              </AuthProvider>
+            </Route>
+            <Route path="/auth/reset-password">
+              <AuthProvider>
+                <ResetPasswordPage />
               </AuthProvider>
             </Route>
             <Route>

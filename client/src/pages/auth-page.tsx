@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -184,6 +182,7 @@ function GoogleSignInButton() {
 
 function LoginForm() {
   const { login } = useAuth();
+  const [, setLocation] = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -228,6 +227,15 @@ function LoginForm() {
           data-testid="input-password"
           autoComplete="current-password"
         />
+      </div>
+      <div className="text-right">
+        <button
+          type="button"
+          onClick={() => setLocation("/auth/forgot-password")}
+          className="text-xs text-muted-foreground hover:text-primary"
+        >
+          Forgot password?
+        </button>
       </div>
       <Button type="submit" className="w-full" disabled={loading} data-testid="button-login">
         {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}

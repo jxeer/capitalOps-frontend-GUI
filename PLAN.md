@@ -1,7 +1,7 @@
 # CapitalOps Implementation Plan
 
-**Last Updated:** 2026-03-23  
-**Status:** Production Deployed - S3 Uploads Configured 🎉
+**Last Updated:** 2026-03-26  
+**Status:** Production Deployed - Forgot Password Configured 🎉
 
 ---
 
@@ -30,6 +30,7 @@
 ### Authentication ✅
 - Google OAuth sign-in (using Google Identity Services)
 - Username/password login
+- Forgot password with email reset link (via Resend)
 - JWT session management
 - User data isolation (users only see their own data)
 
@@ -79,6 +80,7 @@ CapitalOps has been developed over several phases, all now complete:
 | 8 | Railway/Vercel Production Deployment | 2026-03-20 |
 | 9 | Google OAuth & Data Isolation Fixes | 2026-03-23 |
 | 10 | AWS S3 File Upload Configuration | 2026-03-23 |
+| 11 | Forgot Password with Resend Email | 2026-03-26 |
 
 ### Phase 1 - Profile Management (2026-03-16) ✅
 - Extended User schema with profileType (investor/vendor/developer) and profileStatus
@@ -145,6 +147,17 @@ CapitalOps has been developed over several phases, all now complete:
 - Railway env vars configured: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET_NAME`, `AWS_REGION`
 - S3 uploads verified working via curl test
 
+### Phase 11 - Forgot Password with Resend Email (2026-03-26) ✅
+- Added Resend Python SDK (`resend>=0.5.0`) to requirements.txt
+- Added `PasswordResetToken` model for single-use reset tokens with 30-minute expiry
+- Added `POST /api/v1/auth/forgot-password` endpoint (accepts username or email, returns success even if account not found to prevent enumeration)
+- Added `POST /api/v1/auth/reset-password` endpoint (validates token, updates password, marks token as used)
+- Created `ForgotPasswordPage` component at `/auth/forgot-password`
+- Created `ResetPasswordPage` component at `/auth/reset-password?token=...`
+- Added "Forgot password?" link on login page
+- Security: tokens are single-use, expire in 30 minutes, stored hashed in DB
+- Requires `RESEND_API_KEY` environment variable to send actual emails
+
 ### Key Accomplishments
 
 **Auth & Security:**
@@ -177,7 +190,7 @@ CapitalOps has been developed over several phases, all now complete:
 |------|----------|--------|
 | Verify Railway PostgreSQL backups | HIGH | 5 min |
 | Add "Load Demo Data" button | MEDIUM | 1 hr |
-| Forgot Password feature | MEDIUM | 2-4 hrs (needs email service) |
+| Set up RESEND_API_KEY in Railway | HIGH | 5 min (after Resend signup) |
 
 ### Future Enhancements
 
