@@ -267,6 +267,14 @@ All components now have module-level and function-level docstrings:
 ### Backend Routes (Pre-existing)
 - `app/routes/compat.py` - Module header exists (40+ endpoints)
 
+### Backend Client (Lightweight Auth UI)
+Located in `backend/client/src/` - separate React app for basic auth:
+- `App.tsx` - Route definitions
+- `main.tsx` - Entry point
+- `pages/LoginPage.tsx` - Login form
+- `pages/DashboardPage.tsx` - Project dashboard
+- `components/ProtectedRoute.tsx` - Auth guard
+
 ---
 
 **Note:** Per AGENTS.md instructions, all new code must include comprehensive comments explaining purpose, approach, and security considerations before being committed.
