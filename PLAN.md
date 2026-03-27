@@ -212,17 +212,24 @@ CapitalOps has been developed over several phases, all now complete:
 
 **Last Updated:** 2026-03-27
 
-Following AGENTS.md guidelines, comprehensive comments were added to all frontend pages and backend authentication code:
+Following AGENTS.md guidelines, comprehensive inline comments were added to the entire project:
 
-### Frontend Documentation (2026-03-27)
-All frontend pages now have module-level docstrings explaining:
-- Purpose and functionality
-- Key features
-- Related backend routes
-- Security considerations
-- State management approach
+### Frontend Components (2026-03-27)
+All components now have module-level and function-level docstrings:
+- `app-sidebar.tsx` - Navigation sidebar with role-based menu items
+- `asset-location-map.tsx` - OpenStreetMap integration with geocoding
+- `communication-center.tsx` - 1-on-1 messaging interface
+- `connection-request-button.tsx` - Connection request state machine
+- `connection-request-list.tsx` - Request management UI
+- `deal-card.tsx` - Deal display with circular progress indicator
+- `glass-card.tsx` - Glassmorphism card wrapper
+- `image-lightbox.tsx` - Full-screen gallery viewer
+- `media-gallery.tsx` - Multi-file upload with preview
+- `page-header.tsx` - Reusable page header layout
+- `stat-card.tsx` - KPI card with trends
+- `theme-provider.tsx` - Theme context with localStorage
 
-**Documented Files:**
+### Frontend Pages (2026-03-27)
 - `App.tsx` - Routing structure, auth flow, protected routes
 - `pages/auth-page.tsx` - MFA login flow with security notes
 - `pages/forgot-password-page.tsx` - Password reset flow
@@ -239,20 +246,27 @@ All frontend pages now have module-level docstrings explaining:
 - `lib/config.ts` - Backend URL configuration with production safety
 - `hooks/use-auth.tsx` - Auth hook with MFA deprecation notice
 
-### Backend Documentation (2026-03-27)
-- `app/routes/auth.py` - Full MFA and password reset flows with security notes
-- `app/models.py` - User, MfaCode, PasswordResetToken models with security characteristics
-
-### Pre-existing Documentation
-These files already had comprehensive documentation:
+### Frontend Pages (Pre-existing documentation)
 - `dashboard.tsx`, `projects.tsx`, `deals.tsx`, `assets.tsx`
 - `allocations.tsx`, `splash.tsx`
-- `app/__init__.py`, `app/routes/uploads.py`, `app/routes/google_auth.py`
-- `app/auth_utils.py`, `app/routes/dashboard.py`, `app/routes/capital.py`
 
-### Future Documentation
-- `compat.py` (2000+ lines, 40+ endpoints) - Module header exists, individual endpoint docs to be added as needed
+### Backend Routes (2026-03-27)
+- `app/routes/auth.py` - Full MFA and password reset flows with security notes
+- `app/routes/capital.py` - Investor-deal matching engine with 5-criteria scoring
+- `app/routes/dashboard.py` - Portfolio-level KPI aggregations
+- `app/routes/execution.py` - Milestone lifecycle with role-gated PATCH
+- `app/routes/google_auth.py` - OAuth 2.0 token verification, 3-step user lookup
+- `app/routes/uploads.py` - Avatar upload pipeline with Pillow resize
+- `app/routes/vendor.py` - Vendor compliance tracking, work order lifecycle
+
+### Backend Utilities (Pre-existing)
+- `app/__init__.py` - Application factory, blueprint registration
+- `app/auth_utils.py` - JWT utilities, role_required decorator
+- `app/models.py` - All 16 database models with full documentation
+
+### Backend Routes (Pre-existing)
+- `app/routes/compat.py` - Module header exists (40+ endpoints)
 
 ---
 
-**Note:** Per AGENTS.md instructions, all new code should include comprehensive comments explaining purpose, approach, and security considerations before being committed.
+**Note:** Per AGENTS.md instructions, all new code must include comprehensive comments explaining purpose, approach, and security considerations before being committed.
