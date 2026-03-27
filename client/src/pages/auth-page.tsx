@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Building2, Loader2 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "@/lib/config";
 
 export default function AuthPage() {
   const { user } = useAuth();
@@ -185,6 +186,9 @@ function LoginForm() {
   const [, setLocation] = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
+  const [debugCode, setDebugCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -196,12 +200,105 @@ function LoginForm() {
     }
     setLoading(true);
     try {
-      await login(username, password);
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      
+      if (data.mfaRequired) {
+        if (data.mfaCode) {
+          setDebugCode(data.mfaCode);
+        }
+        setMfaRequired(true);
+      } else if (data.accessToken) {
+        localStorage.setItem("auth_token", data.accessToken);
+        window.location.href = "/";
+      } else {
+        toast({ title: "Error", description: data.error || "Login failed", variant: "destructive" });
+      }
     } catch {
+      toast({ title: "Network error", description: "Could not connect to server", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
+
+  const handleMfaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mfaCode) {
+      toast({ title: "Please enter the code", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/login/verify-mfa`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, code: mfaCode }),
+      });
+      const data = await res.json();
+      
+      if (data.accessToken) {
+        localStorage.setItem("auth_token", data.accessToken);
+        window.location.href = "/";
+      } else {
+        toast({ title: "Error", description: data.error || "Invalid code", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Network error", description: "Could not connect to server", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (mfaRequired) {
+    return (
+      <form onSubmit={handleMfaSubmit} className="space-y-4">
+        <div className="text-center space-y-2 mb-4">
+          <h2 className="text-xl font-semibold">Enter Login Code</h2>
+          <p className="text-sm text-muted-foreground">
+            We sent a code to your email. Enter it below.
+          </p>
+        </div>
+        {debugCode && (
+          <div className="p-3 rounded-md bg-muted text-sm text-center">
+            <p className="font-medium mb-1">Debug - MFA Code:</p>
+            <p className="text-lg font-bold tracking-widest">{debugCode}</p>
+          </div>
+        )}
+        <div className="space-y-2">
+          <Label htmlFor="mfa-code">6-Digit Code</Label>
+          <Input
+            id="mfa-code"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]{6}"
+            maxLength={6}
+            value={mfaCode}
+            onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            placeholder="000000"
+            className="text-center text-lg tracking-widest font-mono"
+            autoComplete="one-time-code"
+          />
+        </div>
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Verify Code
+        </Button>
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => { setMfaRequired(false); setMfaCode(""); setDebugCode(null); }}
+            className="text-sm text-muted-foreground hover:text-primary"
+          >
+            Back to login
+          </button>
+        </div>
+      </form>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
