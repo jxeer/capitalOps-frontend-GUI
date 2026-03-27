@@ -1,8 +1,21 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, TrendingUp, Users, Shield, ArrowRight, DollarSign, Target, BarChart3 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useEffect } from "react";
 
 export default function SplashPage() {
+  const { user, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      window.location.href = "/dashboard";
+    }
+  }, [user, isLoading]);
+
+  if (isLoading || user) {
+    return null;
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Hero Section */}
