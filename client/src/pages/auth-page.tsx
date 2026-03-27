@@ -181,17 +181,45 @@ function GoogleSignInButton() {
   );
 }
 
+/**
+ * LoginForm Component
+ * 
+ * Handles username/password login with MFA verification.
+ * 
+ * LOGIN FLOW:
+ * 1. User enters username/password and submits
+ * 2. Backend validates credentials and returns MFA required
+ * 3. If MFA required, show MFA code input (code displayed on-screen in debug mode)
+ * 4. User enters 6-digit code from email
+ * 5. Backend validates code and returns JWT
+ * 6. Redirect to dashboard
+ * 
+ * SECURITY:
+ * - MFA is mandatory for all password-based logins (defense in depth)
+ * - Codes are 6 digits, valid 5 minutes, single-use
+ * - Generic error messages prevent username enumeration
+ */
 function LoginForm() {
+  // State for form fields
   const { login } = useAuth();
   const [, setLocation] = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  
+  // MFA state - tracks whether we're waiting for MFA verification
   const [mfaRequired, setMfaRequired] = useState(false);
-  const [mfaCode, setMfaCode] = useState("");
-  const [debugCode, setDebugCode] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");  // User's entered MFA code
+  const [debugCode, setDebugCode] = useState<string | null>(null);  // Code from backend (for debugging)
+  
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  /**
+   * Handle username/password form submission
+   * 
+   * Sends credentials to backend. If valid, backend returns MFA required.
+   * We then show the MFA input screen.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) {
@@ -200,6 +228,7 @@ function LoginForm() {
     }
     setLoading(true);
     try {
+      // Call backend login endpoint
       const res = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -207,24 +236,36 @@ function LoginForm() {
       });
       const data = await res.json();
       
+      // Check response - backend returns MFA required or JWT
       if (data.mfaRequired) {
+        // MFA required - show MFA input screen
+        // In debug/dev mode, backend returns the code directly when email fails
         if (data.mfaCode) {
           setDebugCode(data.mfaCode);
         }
         setMfaRequired(true);
       } else if (data.accessToken) {
+        // No MFA required (shouldn't happen with current backend config)
         localStorage.setItem("auth_token", data.accessToken);
         window.location.href = "/";
       } else {
+        // Login failed - show error toast
         toast({ title: "Error", description: data.error || "Login failed", variant: "destructive" });
       }
     } catch {
+      // Network error - couldn't reach backend
       toast({ title: "Network error", description: "Could not connect to server", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
+  /**
+   * Handle MFA code verification submission
+   * 
+   * Sends the 6-digit code to backend for verification.
+   * If valid, backend returns JWT and we redirect to dashboard.
+   */
   const handleMfaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!mfaCode) {
@@ -233,6 +274,7 @@ function LoginForm() {
     }
     setLoading(true);
     try {
+      // Call backend MFA verification endpoint
       const res = await fetch(`${API_BASE_URL}/api/v1/auth/login/verify-mfa`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -241,18 +283,22 @@ function LoginForm() {
       const data = await res.json();
       
       if (data.accessToken) {
+        // MFA verified - store JWT and redirect to dashboard
         localStorage.setItem("auth_token", data.accessToken);
         window.location.href = "/dashboard";
       } else {
+        // MFA verification failed
         toast({ title: "Error", description: data.error || "Invalid code", variant: "destructive" });
       }
     } catch {
+      // Network error
       toast({ title: "Network error", description: "Could not connect to server", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
+  // Show MFA verification screen when required
   if (mfaRequired) {
     return (
       <form onSubmit={handleMfaSubmit} className="space-y-4">
@@ -262,12 +308,17 @@ function LoginForm() {
             We sent a code to your email. Enter it below.
           </p>
         </div>
+        
+        {/* Debug display: shows MFA code when email sending fails */}
+        {/* In production, user would receive code via email */}
         {debugCode && (
           <div className="p-3 rounded-md bg-muted text-sm text-center">
             <p className="font-medium mb-1">Debug - MFA Code:</p>
             <p className="text-2xl font-bold tracking-widest">{debugCode}</p>
           </div>
         )}
+        
+        {/* 6-digit numeric code input */}
         <div className="space-y-2">
           <Label htmlFor="mfa-code">6-Digit Code</Label>
           <Input
@@ -277,6 +328,7 @@ function LoginForm() {
             pattern="[0-9]{6}"
             maxLength={6}
             value={mfaCode}
+            // Strip non-digits and limit to 6 characters
             onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
             placeholder="000000"
             className="text-center text-2xl tracking-widest font-mono"
@@ -290,6 +342,7 @@ function LoginForm() {
         <div className="text-center">
           <button
             type="button"
+            // Allow user to go back and retry credentials if needed
             onClick={() => { setMfaRequired(false); setMfaCode(""); setDebugCode(null); }}
             className="text-sm text-muted-foreground hover:text-primary"
           >
@@ -300,6 +353,7 @@ function LoginForm() {
     );
   }
 
+  // Show username/password login form
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">

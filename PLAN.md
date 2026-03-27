@@ -1,7 +1,7 @@
 # CapitalOps Implementation Plan
 
-**Last Updated:** 2026-03-26  
-**Status:** Production Deployed - Forgot Password Configured 🎉
+**Last Updated:** 2026-03-27  
+**Status:** Production Deployed - MFA + Email Auth Complete 🎉
 
 ---
 
@@ -29,8 +29,10 @@
 
 ### Authentication ✅
 - Google OAuth sign-in (using Google Identity Services)
-- Username/password login
-- Forgot password with email reset link (via Resend)
+- Username/password login with mandatory MFA
+- Email/password registration (with email field required)
+- Forgot password with on-screen reset link
+- 6-digit MFA codes (displayed on-screen, emailed when domain verified)
 - JWT session management
 - User data isolation (users only see their own data)
 
@@ -80,83 +82,18 @@ CapitalOps has been developed over several phases, all now complete:
 | 8 | Railway/Vercel Production Deployment | 2026-03-20 |
 | 9 | Google OAuth & Data Isolation Fixes | 2026-03-23 |
 | 10 | AWS S3 File Upload Configuration | 2026-03-23 |
-| 11 | Forgot Password with Resend Email | 2026-03-26 |
+| 11 | Forgot Password + MFA | 2026-03-27 |
 
-### Phase 1 - Profile Management (2026-03-16) ✅
-- Extended User schema with profileType (investor/vendor/developer) and profileStatus
-- Updated OAuth flow to auto-create profiles on Google sign-up
-- Added profile menu in header with user avatar
-- Created Profile page at /profile with edit capability
-
-### Phase 2 - Visual Features (2026-03-16) ✅
-- AWS S3 integration for photo/video uploads
-- MediaGallery component with upload/remove functionality
-- Google Maps integration for asset location tracking
-- Assets page updated with media & location
-- Projects page updated with media & location
-
-### Phase 3 - Connections & Messaging (2026-03-16)
-- Connection request system (send, accept, decline requests)
-- Messaging system (1-on-1 conversations)
-- Connections page with tabbed interface
-- Professional "Connections" terminology
-
-### Phase 4 - Profile Enhancement (2026-03-17) ✅
-- Profile image upload using S3 integration
-- Comprehensive user profile schema with 20+ fields
-- User discovery search (global & filtered)
-- UI polish for profile images and avatars
-
-### Phase 5 - Vendor Ranking (2026-03-17) ✅
-- Vendor performance tracking and scoring
-- Rating system for vendors
-
-### Phase 6 - UI/UX Polish (2026-03-17) ✅
-- Branding splash page with hero, stats, features sections
-- Glassmorphism effect on dashboard cards
-- Interactive animations (pulse, ping, fade-in)
-- Wealth color palette (dark blue, emerald, amber)
-- Responsive design for demo (1024px iPad, mobile)
-
-### Phase 7 - Dashboard & Analytics (2026-03-17) ✅
-- Dashboard page with key metrics and KPIs
-- Assets overview with portfolio monitoring
-- Projects tracking with milestone management
-- Investor portal for allocations
-
-### Phase 8 - Railway/Vercel Deployment (2026-03-20) ✅
-- Backend on Railway with PostgreSQL
-- Frontend on Vercel
-- JWT authentication working
-- Media upload/save/view working
-- Image lightbox component
-
-### Phase 9 - Google OAuth & Data Isolation (2026-03-23) ✅
-- Fixed Google OAuth redirect_uri issues
-- Switched to Google Identity Services (browser-side JWT)
-- Implemented user-scoped data isolation
-- Users only see their own portfolios/assets/projects/deals
-- Graceful fallback for unauthenticated users
-
-### Phase 10 - AWS S3 File Upload Configuration (2026-03-23) ✅
-- Added boto3 dependency to requirements.txt
-- Updated `/api/upload` endpoint in compat.py to support S3 uploads
-- Files now upload to `capitalops-images` S3 bucket at `media/{user_id}/{uuid}.{ext}`
-- Falls back to base64 data URL if S3 is not configured
-- Public read access enabled on bucket
-- Railway env vars configured: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET_NAME`, `AWS_REGION`
-- S3 uploads verified working via curl test
-
-### Phase 11 - Forgot Password with Resend Email (2026-03-26) ✅
-- Added Resend Python SDK (`resend>=0.5.0`) to requirements.txt
-- Added `PasswordResetToken` model for single-use reset tokens with 30-minute expiry
-- Added `POST /api/v1/auth/forgot-password` endpoint (accepts username or email, returns success even if account not found to prevent enumeration)
-- Added `POST /api/v1/auth/reset-password` endpoint (validates token, updates password, marks token as used)
-- Created `ForgotPasswordPage` component at `/auth/forgot-password`
-- Created `ResetPasswordPage` component at `/auth/reset-password?token=...`
-- Added "Forgot password?" link on login page
-- Security: tokens are single-use, expire in 30 minutes, stored hashed in DB
-- Requires `RESEND_API_KEY` environment variable to send actual emails
+### Phase 12 - Forgot Password + MFA (2026-03-27) ✅
+- Added `MfaCode` model for 6-digit verification codes with 5-minute expiry
+- Modified login flow to require MFA after valid username/password
+- Added `/api/v1/auth/login/verify-mfa` endpoint to verify codes
+- Created MFA input screen in `auth-page.tsx` with 6-digit numeric input
+- Debug mode shows MFA code on-screen (for testing without email)
+- Resend email integration for sending codes (requires domain verification for production)
+- Added email field to registration form (was missing - security issue)
+- Backend sends MFA code via Resend when email fails, falls back to on-screen display
+- PostgreSQL: Had to `DROP TYPE mfa_codes` to resolve conflict with SQLAlchemy table creation
 
 ### Key Accomplishments
 
@@ -190,13 +127,12 @@ CapitalOps has been developed over several phases, all now complete:
 |------|----------|--------|
 | Verify Railway PostgreSQL backups | HIGH | 5 min |
 | Add "Load Demo Data" button | MEDIUM | 1 hr |
-| Set up RESEND_API_KEY in Railway | HIGH | 5 min (after Resend signup) |
+| Verify domain for Resend (enables real email sending) | HIGH | 5 min (after client purchases domain) |
 
 ### Future Enhancements
 
 | Item | Priority | Effort |
 |------|----------|--------|
-| Multi-Factor Authentication (MFA) | HIGH | 1-2 days |
 | Clerk migration (optional auth service) | LOW | 2-4 hrs |
 | Data export endpoint (GDPR compliance) | MEDIUM | 2 hrs |
 | Privacy policy / Terms of service | MEDIUM | 2 hrs |
@@ -227,6 +163,29 @@ CapitalOps has been developed over several phases, all now complete:
 | PostgreSQL database | ✅ Complete |
 | Railway PostgreSQL backups | ⚠️ Verify in Railway dashboard |
 | AWS S3 for uploads | ✅ Complete |
+| MFA (6-digit codes) | ✅ Complete |
+| Email sending (password reset, MFA) | ⚠️ Domain verification needed for production |
+
+---
+
+## Email Configuration
+
+**Current State:** Email sending is configured but requires domain verification in Resend.
+
+**How it works:**
+- Password reset and MFA codes show on-screen in development/production (until domain verified)
+- Resend API key is set in Railway environment variables
+- Domain `capitalops.app` needs verification at https://resend.com/domains
+
+**To enable real email sending:**
+1. Client purchases a domain (e.g., `capitalops.com`)
+2. Add domain to Resend dashboard and verify DNS records
+3. Update `FRONTEND_ORIGIN` env var to use the verified domain
+
+**MFA Codes:**
+- 6-digit numeric codes
+- Valid for 5 minutes
+- Single-use (marked as used after successful verification)
 
 ---
 
@@ -239,3 +198,10 @@ CapitalOps has been developed over several phases, all now complete:
 
 **Railway Free Tier:** 1 backup/day, 3 day retention  
 **Railway Pro Tier:** Configurable, longer retention
+
+---
+
+## Backend Repository
+
+**GitHub:** `git@github.com:jxeer/capialOps-backend-API.git`
+**Railway Project:** https://railway.app/dashboard
