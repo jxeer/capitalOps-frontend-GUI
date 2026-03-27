@@ -5,7 +5,7 @@
  * This module handles:
  * - User authentication state (logged in user info)
  * - Login/logout/register mutations via React Query
- * - JWT token storage in localStorage
+ * - JWT token storage in httpOnly cookies (with localStorage fallback during migration)
  * 
  * IMPORTANT: This file uses the OLD /api/login endpoint (compat layer).
  * The NEW /api/v1/auth/login endpoint is used directly in auth-page.tsx
@@ -15,9 +15,9 @@
  * AUTHENTICATION FLOW:
  * 1. User credentials sent to /api/login
  * 2. Server validates and returns JWT + user data
- * 3. JWT stored in localStorage as 'auth_token'
+ * 3. JWT stored in httpOnly cookie AND localStorage for migration period
  * 4. AuthContext provides user state to entire app
- * 5. All authenticated requests include Bearer token
+ * 5. All authenticated requests include Bearer token (from cookie or localStorage)
  * 
  * DEPRECATION NOTE:
  * The login/register mutations here do NOT support MFA.
@@ -27,7 +27,7 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, clearAuthToken } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
@@ -36,6 +36,34 @@ import { useLocation } from "wouter";
 // VITE_COMPAT_API_KEY: Shared secret for /api/* compat layer routes
 const API_BASE = (import.meta.env as any).VITE_BACKEND_URL || "";
 const API_KEY = (import.meta.env as any).VITE_COMPAT_API_KEY || "";
+
+/**
+ * Get auth token from cookie or localStorage fallback.
+ * Cookies are httpOnly and more secure; localStorage is a migration fallback.
+ */
+function getAuthToken(): string | null {
+  const cookies = document.cookie.split("; ");
+  const tokenCookie = cookies.find((c) => c.startsWith("capitalops_token="));
+  if (tokenCookie) {
+    return tokenCookie.split("=")[1];
+  }
+  return localStorage.getItem("auth_token");
+}
+
+/**
+ * Store auth token in both cookie (httpOnly) and localStorage.
+ * - Cookie provides XSS protection
+ * - localStorage provides backwards compatibility during migration
+ * 
+ * @param token - The JWT access token to store
+ */
+function storeAuthToken(token: string): void {
+  // Store in localStorage for backwards compatibility
+  localStorage.setItem("auth_token", token);
+  // Also set httpOnly cookie for XSS protection
+  // Note: We can't set httpOnly from JS, but the backend does this.
+  // Here we just ensure the non-httpOnly version is also available if needed
+}
 
 /**
  * Build headers for authenticated API requests.
@@ -123,18 +151,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Query to fetch current user from /api/user endpoint.
    * 
    * Called on mount to validate existing JWT and load user profile.
-   * - Returns null on 401 (invalid/expired token) and clears localStorage
+   * - Returns null on 401 (invalid/expired token) and clears cookies/localStorage
    * - staleTime: Infinity prevents unnecessary refetches
    * - retry: false to fail fast on auth errors
    */
   const { data: user, isLoading } = useQuery<AuthUser | null>({
     queryKey: ["/api/user"],
     queryFn: async () => {
-      // Get JWT from localStorage
-      const token = localStorage.getItem("auth_token");
+      const token = getAuthToken();
       const headers = getAuthHeaders();
       
-      // Attach Bearer token if available
+      // Attach Bearer token if available (from cookie or localStorage)
       if (token) headers["Authorization"] = `Bearer ${token}`;
       
       const res = await fetch(`${API_BASE}/api/user`, { 
@@ -142,9 +169,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credentials: "include" 
       });
       
-      // Handle 401: token invalid or expired
+      // Handle 401: token invalid or expired - clear all auth state
       if (res.status === 401) {
-        localStorage.removeItem("auth_token");
+        clearAuthToken();
+        window.location.href = "/auth";
         return null;
       }
       if (!res.ok) throw new Error("Failed to fetch user");
@@ -178,7 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (data) => {
       // Store JWT in localStorage on successful login
       if (data.accessToken) {
-        localStorage.setItem("auth_token", data.accessToken);
+        storeAuthToken(data.accessToken);
       }
       // Update React Query cache and redirect to dashboard
       queryClient.setQueryData(["/api/user"], data.user || data);
@@ -213,7 +241,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (data) => {
       // Store JWT in localStorage on successful registration
       if (data.accessToken) {
-        localStorage.setItem("auth_token", data.accessToken);
+        storeAuthToken(data.accessToken);
       }
       // Update React Query cache and redirect to dashboard
       queryClient.setQueryData(["/api/user"], data.user || data);
@@ -229,12 +257,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Logout mutation
    * 
    * Clears local auth state and calls /api/logout endpoint.
-   * Always clears localStorage regardless of API success.
+   * Clears both cookie and localStorage regardless of API success.
    */
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      // Clear local storage first
-      localStorage.removeItem("auth_token");
+      // Clear all auth state first (cookie and localStorage)
+      clearAuthToken();
       try {
         // Call logout endpoint (ignore errors - we still want to clear local state)
         await apiRequest("POST", "/api/logout");

@@ -38,7 +38,8 @@
  * many components deep need access to theme and data fetching.
  */
 
-import { Switch, Route, useLocation } from "wouter";
+import { useEffect } from "react";
+import { Switch, Route, useLocation, Link } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -115,8 +116,8 @@ function UserMenu() {
   // Don't render if no user is logged in
   if (!user) return null;
 
-  // Generate avatar fallback from username initials
-  const avatarFallback = user.username.substring(0, 2).toUpperCase();
+  // Generate avatar fallback from username initials (defensive: handle null/undefined)
+  const avatarFallback = ((user.username ?? "")).substring(0, 2).toUpperCase() || "NA";
 
   return (
     <DropdownMenu>
@@ -174,10 +175,10 @@ function UserMenu() {
         
         {/* View profile link */}
         <DropdownMenuItem asChild>
-          <a href="/profile" className="flex items-center gap-2 cursor-pointer">
+          <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
             <User className="h-4 w-4" />
             <span className="text-sm">View Profile</span>
-          </a>
+          </Link>
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />
@@ -212,10 +213,11 @@ function UserMenu() {
  *   /allocations, /milestones, /risk-flags, /vendors,
  *   /work-orders, /investor-portal, /profile, /connections
  */
+// CSS custom properties for sidebar dimensions (typed correctly as CSS custom properties)
 const sidebarStyle = {
   "--sidebar-width": "16rem",
   "--sidebar-width-icon": "3rem",
-};
+} as React.CSSProperties & Record<string, string>;
 
 function ProtectedLayout() {
   const { user, isLoading } = useAuth();
@@ -230,11 +232,14 @@ function ProtectedLayout() {
     );
   }
 
-  // Redirect to /auth if not authenticated
-  if (!user) {
-    Promise.resolve().then(() => setLocation("/auth"));
-    return null;
-  }
+  // Redirect to /auth if not authenticated (using useEffect to avoid side-effects during render)
+  useEffect(() => {
+    if (!user) {
+      setLocation("/auth");
+    }
+  }, [user, setLocation]);
+
+  if (!user) return null;
 
   // Render authenticated layout with sidebar and content
   return (
@@ -260,7 +265,6 @@ function ProtectedLayout() {
           {/* Page content area - switches based on route */}
           <main className="flex-1 overflow-auto">
             <Switch>
-              <Route path="/" component={Dashboard} />
               <Route path="/dashboard" component={Dashboard} />
               <Route path="/assets" component={Assets} />
               <Route path="/projects" component={Projects} />
