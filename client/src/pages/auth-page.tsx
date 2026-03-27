@@ -248,6 +248,7 @@ function LoginForm() {
 function RegisterForm() {
   const { register } = useAuth();
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -255,7 +256,7 @@ function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username || !password || !confirmPassword) {
+    if (!username || !email || !password || !confirmPassword) {
       toast({ title: "Please fill in all fields", variant: "destructive" });
       return;
     }
@@ -269,7 +270,7 @@ function RegisterForm() {
     }
     setLoading(true);
     try {
-      await register(username, password);
+      await register(username, password, email);
     } catch {
     } finally {
       setLoading(false);
@@ -287,6 +288,18 @@ function RegisterForm() {
           placeholder="Choose a username"
           data-testid="input-register-username"
           autoComplete="username"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="register-email">Email</Label>
+        <Input
+          id="register-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter your email"
+          data-testid="input-register-email"
+          autoComplete="email"
         />
       </div>
       <div className="space-y-2">
