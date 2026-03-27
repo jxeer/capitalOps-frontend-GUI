@@ -242,7 +242,7 @@ function LoginForm() {
       
       if (data.accessToken) {
         localStorage.setItem("auth_token", data.accessToken);
-        window.location.href = "/";
+        window.location.href = "/dashboard";
       } else {
         toast({ title: "Error", description: data.error || "Invalid code", variant: "destructive" });
       }
