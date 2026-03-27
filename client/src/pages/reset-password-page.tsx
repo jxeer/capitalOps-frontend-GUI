@@ -6,9 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Building2, Loader2, ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "@/lib/config";
 
 export default function ResetPasswordPage() {
-  const location = useLocation();
+  const [, setLocation] = useLocation();
   const [token, setToken] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -16,8 +17,6 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const { toast } = useToast();
-
-  const backendUrl = (import.meta.env as any).VITE_BACKEND_URL || "";
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -27,7 +26,7 @@ export default function ResetPasswordPage() {
     } else {
       setError("No reset token provided. Please request a new password reset link.");
     }
-  }, [location]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +51,7 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${backendUrl}/api/v1/auth/reset-password`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),

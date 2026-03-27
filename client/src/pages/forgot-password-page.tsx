@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Building2, Loader2, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "@/lib/config";
 
 export default function ForgotPasswordPage() {
   const [, setLocation] = useLocation();
@@ -13,8 +14,6 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const { toast } = useToast();
-
-  const backendUrl = (import.meta.env as any).VITE_BACKEND_URL || "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,21 +29,15 @@ export default function ForgotPasswordPage() {
         ? { email: identifier }
         : { username: identifier };
 
-      const res = await fetch(`${backendUrl}/api/v1/auth/forgot-password`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
-      if (res.ok) {
-        setSubmitted(true);
-      } else {
-        const data = await res.json();
-        toast({ title: "Error", description: data.error || "Something went wrong", variant: "destructive" });
-      }
+      setSubmitted(true);
     } catch {
       toast({ title: "Network error", description: "Could not connect to server", variant: "destructive" });
-    } finally {
       setLoading(false);
     }
   };
