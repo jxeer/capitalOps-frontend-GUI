@@ -265,21 +265,18 @@ function LoginForm() {
         {debugCode && (
           <div className="p-3 rounded-md bg-muted text-sm text-center">
             <p className="font-medium mb-1">Debug - MFA Code:</p>
-            <p className="text-lg font-bold tracking-widest">{debugCode}</p>
+            <p className="text-lg font-mono break-all">{debugCode}</p>
           </div>
         )}
         <div className="space-y-2">
-          <Label htmlFor="mfa-code">6-Digit Code</Label>
+          <Label htmlFor="mfa-code">Login Code</Label>
           <Input
             id="mfa-code"
             type="text"
-            inputMode="numeric"
-            pattern="[0-9]{6}"
-            maxLength={6}
             value={mfaCode}
-            onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder="000000"
-            className="text-center text-lg tracking-widest font-mono"
+            onChange={(e) => setMfaCode(e.target.value)}
+            placeholder="Paste the code from your email"
+            className="font-mono"
             autoComplete="one-time-code"
           />
         </div>
