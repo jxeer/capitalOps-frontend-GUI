@@ -205,3 +205,54 @@ CapitalOps has been developed over several phases, all now complete:
 
 **GitHub:** `git@github.com:jxeer/capialOps-backend-API.git`
 **Railway Project:** https://railway.app/dashboard
+
+---
+
+## Code Documentation
+
+**Last Updated:** 2026-03-27
+
+Following AGENTS.md guidelines, comprehensive comments were added to all frontend pages and backend authentication code:
+
+### Frontend Documentation (2026-03-27)
+All frontend pages now have module-level docstrings explaining:
+- Purpose and functionality
+- Key features
+- Related backend routes
+- Security considerations
+- State management approach
+
+**Documented Files:**
+- `App.tsx` - Routing structure, auth flow, protected routes
+- `pages/auth-page.tsx` - MFA login flow with security notes
+- `pages/forgot-password-page.tsx` - Password reset flow
+- `pages/reset-password-page.tsx` - Token-based password reset
+- `pages/connections.tsx` - Professional networking
+- `pages/investor-portal.tsx` - Investor dashboard
+- `pages/profile.tsx` - User profile management
+- `pages/milestones.tsx` - Project milestone tracking
+- `pages/risk-flags.tsx` - Risk management
+- `pages/work-orders.tsx` - Vendor work orders
+- `pages/vendors.tsx` - Vendor directory
+- `pages/investors.tsx` - Investor management
+- `lib/s3.ts` - File upload architecture
+- `lib/config.ts` - Backend URL configuration with production safety
+- `hooks/use-auth.tsx` - Auth hook with MFA deprecation notice
+
+### Backend Documentation (2026-03-27)
+- `app/routes/auth.py` - Full MFA and password reset flows with security notes
+- `app/models.py` - User, MfaCode, PasswordResetToken models with security characteristics
+
+### Pre-existing Documentation
+These files already had comprehensive documentation:
+- `dashboard.tsx`, `projects.tsx`, `deals.tsx`, `assets.tsx`
+- `allocations.tsx`, `splash.tsx`
+- `app/__init__.py`, `app/routes/uploads.py`, `app/routes/google_auth.py`
+- `app/auth_utils.py`, `app/routes/dashboard.py`, `app/routes/capital.py`
+
+### Future Documentation
+- `compat.py` (2000+ lines, 40+ endpoints) - Module header exists, individual endpoint docs to be added as needed
+
+---
+
+**Note:** Per AGENTS.md instructions, all new code should include comprehensive comments explaining purpose, approach, and security considerations before being committed.
