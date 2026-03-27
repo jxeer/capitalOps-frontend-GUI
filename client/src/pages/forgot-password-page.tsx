@@ -13,6 +13,7 @@ export default function ForgotPasswordPage() {
   const [identifier, setIdentifier] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [resetLink, setResetLink] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,6 +36,10 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify(body),
       });
 
+      const data = await res.json();
+      if (data.reset_link) {
+        setResetLink(data.reset_link);
+      }
       setSubmitted(true);
     } catch {
       toast({ title: "Network error", description: "Could not connect to server", variant: "destructive" });
@@ -59,6 +64,14 @@ export default function ForgotPasswordPage() {
                 The link will expire in 30 minutes.
               </CardDescription>
             </CardHeader>
+            {resetLink && (
+              <CardContent className="space-y-4">
+                <div className="p-3 rounded-md bg-muted text-sm break-all">
+                  <p className="font-medium mb-1">Debug - Reset Link:</p>
+                  <a href={resetLink} className="text-primary hover:underline">{resetLink}</a>
+                </div>
+              </CardContent>
+            )}
             <CardContent>
               <Button variant="outline" className="w-full" onClick={() => setLocation("/auth")}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
