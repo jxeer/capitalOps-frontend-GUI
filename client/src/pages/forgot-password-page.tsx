@@ -18,6 +18,8 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    alert("Submit clicked with: " + identifier);
     if (!identifier) {
       toast({ title: "Please enter your username or email", variant: "destructive" });
       return;
@@ -30,18 +32,23 @@ export default function ForgotPasswordPage() {
         ? { email: identifier }
         : { username: identifier };
 
-      const res = await fetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
+      const url = `${API_BASE_URL}/api/v1/auth/forgot-password`;
+      alert("Fetching: " + url);
+      
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
       const data = await res.json();
+      alert("Response: " + JSON.stringify(data));
       if (data.reset_link) {
         setResetLink(data.reset_link);
       }
       setSubmitted(true);
-    } catch {
+    } catch (err) {
+      alert("Error: " + err);
       toast({ title: "Network error", description: "Could not connect to server", variant: "destructive" });
       setLoading(false);
     }
