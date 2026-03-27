@@ -1,3 +1,22 @@
+/**
+ * CapitalOps Milestones Page
+ * 
+ * Purpose: Track project milestones throughout the development lifecycle,
+ * including completion status, deadlines, and responsible parties.
+ * 
+ * Key Features:
+ * - CRUD operations for milestones
+ * - Status tracking (Planning, In Progress, On Track, At Risk, On Hold, Complete)
+ * - Due date management with overdue indicators
+ * - Associated project and asset linking
+ * 
+ * Related Backend Routes:
+ * - GET /api/milestones - List milestones
+ * - POST /api/milestones - Create milestone
+ * - PUT /api/milestones/:id - Update milestone
+ * - DELETE /api/milestones/:id - Delete milestone
+ */
+
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Milestone as MilestoneIcon, Calendar, AlertTriangle, CheckCircle2, Clock, Circle, Plus, Trash2, Pencil } from "lucide-react";

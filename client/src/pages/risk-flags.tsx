@@ -1,3 +1,22 @@
+/**
+ * CapitalOps Risk Flags Page
+ * 
+ * Purpose: Track and manage risk indicators for projects and deals,
+ * enabling proactive risk management and mitigation.
+ * 
+ * Key Features:
+ * - Create/view risk flags with severity levels (Low, Medium, High, Critical)
+ * - Status tracking (Open, Mitigated, Resolved)
+ * - Link risks to specific projects
+ * - Mitigation notes and resolution tracking
+ * 
+ * Related Backend Routes:
+ * - GET /api/risk-flags - List risk flags
+ * - POST /api/risk-flags - Create risk flag
+ * - PUT /api/risk-flags/:id - Update risk flag
+ * - DELETE /api/risk-flags/:id - Delete risk flag
+ */
+
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AlertTriangle, Shield, ShieldAlert, ShieldCheck, Plus, Trash2, Pencil } from "lucide-react";

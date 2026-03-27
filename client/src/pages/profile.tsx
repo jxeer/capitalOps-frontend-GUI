@@ -1,3 +1,26 @@
+/**
+ * CapitalOps User Profile Page
+ * 
+ * Purpose: Allows users to view and edit their own profile information,
+ * including profile image, professional details, and organization info.
+ * 
+ * Approach:
+ * - View/edit mode toggle
+ * - Profile image upload with S3 integration
+ * - Profile type selection (investor/vendor/developer)
+ * - Professional fields: title, organization, LinkedIn, bio
+ * - All changes saved via PUT /api/users/:id endpoint
+ * 
+ * SECURITY:
+ * - Users can only edit their own profile (user.id from auth context)
+ * - Image upload validates file type (image/*) and size (max 2MB)
+ * - Profile image stored in S3, URL stored in user record
+ * 
+ * Related Backend Routes:
+ * - GET /api/user - Current user data
+ * - PUT /api/users/:id - Update user profile
+ */
+
 import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";

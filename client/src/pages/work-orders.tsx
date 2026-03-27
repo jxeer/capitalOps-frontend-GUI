@@ -1,3 +1,22 @@
+/**
+ * CapitalOps Work Orders Page
+ * 
+ * Purpose: Manage maintenance and service work orders for vendors,
+ * tracking status, costs, and completion for project-related tasks.
+ * 
+ * Key Features:
+ * - Create/view work orders with vendor assignment
+ * - Status tracking (Open, In Progress, Completed, Cancelled)
+ * - Cost tracking and budget management
+ * - Priority levels (Low, Medium, High, Urgent)
+ * 
+ * Related Backend Routes:
+ * - GET /api/work-orders - List work orders
+ * - POST /api/work-orders - Create work order
+ * - PUT /api/work-orders/:id - Update work order
+ * - DELETE /api/work-orders/:id - Delete work order
+ */
+
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ClipboardList, DollarSign, AlertCircle, CheckCircle2, Plus, Trash2, Pencil, Zap, ArrowUpCircle, MinusCircle, Building2 } from "lucide-react";

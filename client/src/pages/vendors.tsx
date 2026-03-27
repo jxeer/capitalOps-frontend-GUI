@@ -1,3 +1,22 @@
+/**
+ * CapitalOps Vendors Page
+ * 
+ * Purpose: Directory of pre-vetted service providers for real estate development,
+ * including contractors, consultants, and other service vendors.
+ * 
+ * Key Features:
+ * - Vendor directory with search and filtering
+ * - Performance ratings and reviews
+ * - Service type categorization
+ * - Contact information and certifications
+ * 
+ * Related Backend Routes:
+ * - GET /api/vendors - List vendors
+ * - POST /api/vendors - Create vendor
+ * - PUT /api/vendors/:id - Update vendor
+ * - DELETE /api/vendors/:id - Delete vendor
+ */
+
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Truck, Shield, Star, Plus, Trash2, Pencil, CheckCircle2, XCircle, Clock, Wrench } from "lucide-react";

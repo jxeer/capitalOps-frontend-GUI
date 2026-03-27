@@ -1,3 +1,22 @@
+/**
+ * CapitalOps Investors Page
+ * 
+ * Purpose: Manage investor relationships and track investment activity,
+ * including investor profiles, allocation tracking, and commitment management.
+ * 
+ * Key Features:
+ * - Investor directory with search
+ * - Investment tier tracking
+ * - Risk tolerance and investment criteria
+ * - Allocation history and commitments
+ * 
+ * Related Backend Routes:
+ * - GET /api/investors - List investors
+ * - POST /api/investors - Create investor
+ * - PUT /api/investors/:id - Update investor
+ * - DELETE /api/investors/:id - Delete investor
+ */
+
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Users, MapPin, Shield, Star, Plus, Trash2, Pencil, TrendingUp, Clock, Target } from "lucide-react";
