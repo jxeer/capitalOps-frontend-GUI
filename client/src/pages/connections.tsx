@@ -1,3 +1,35 @@
+/**
+ * CapitalOps Connections Page
+ * 
+ * Purpose: Manages professional networking through connections, connection requests,
+ * and 1-on-1 messaging between users on the platform.
+ * 
+ * Approach:
+ * - Tabbed interface separating connections, requests, and messages
+ * - Search/discover users by username
+ * - Send/accept/decline connection requests
+ * - Real-time messaging with connected users
+ * 
+ * Key Features:
+ * - All Connections tab: List of accepted connections with search
+ * - Connection Requests tab: Pending incoming/outgoing requests
+ * - Messages tab: 1-on-1 conversations with connected users
+ * - User discovery search for finding new connections
+ * - CommunicationCenter component for messaging UI
+ * 
+ * Related Components:
+ * - CommunicationCenter: Full messaging interface
+ * - ConnectionRequestList: Request management UI
+ * 
+ * Related Backend Routes:
+ * - GET /api/connections - List user's accepted connections
+ * - GET /api/connection-pending - List pending requests
+ * - POST /api/connection-requests - Send connection request
+ * - PUT /api/connection-requests/:id - Accept/decline request
+ * - GET /api/conversations - List user's conversations
+ * - POST /api/messages - Send message
+ */
+
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -14,28 +46,46 @@ import { User, MessageSquare, UserPlus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { User as UserType } from "@shared/schema";
 
+/**
+ * Main Connections Page Component
+ * 
+ * Three main tabs:
+ * 1. "all" - Accepted connections with search
+ * 2. "requests" - Pending connection requests
+ * 3. "messages" - 1-on-1 messaging
+ */
 export default function Connections() {
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
+  
+  // Search/filter state
   const [searchTerm, setSearchTerm] = useState("");
   const [discoverTerm, setDiscoverTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
+  // Fetch user's accepted connections
   const { data: connections, isLoading: connectionsLoading } = useQuery<UserType[]>({
     queryKey: ["/api/connections"],
     enabled: !!user,
   });
 
-   const { data: pendingRequests, isLoading: requestsLoading } = useQuery<any[]>({
+  // Fetch pending connection requests (both sent and received)
+  const { data: pendingRequests, isLoading: requestsLoading } = useQuery<any[]>({
     queryKey: ["/api/connection-pending"],
     enabled: !!user,
   });
 
+  // Fetch all users for discovery
   const { data: allUsers, isLoading: allUsersLoading } = useQuery<UserType[]>({
     queryKey: ["/api/users"],
     enabled: !!user,
   });
 
+  /**
+   * Handle search form submission
+   * 
+   * TODO: Search endpoint not yet implemented on backend
+   */
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
@@ -44,16 +94,20 @@ export default function Connections() {
     }
   };
 
+  // Show nothing while loading
   if (isLoading || (activeTab === "all" && connectionsLoading)) return null;
 
+  // Filter connections by search term
   const filteredConnections = connections?.filter((u) =>
     u.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Count pending requests for badge
   const pendingCount = pendingRequests?.length || 0;
 
   return (
     <div className="p-6 space-y-6">
+      {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Connections</h1>
@@ -61,144 +115,111 @@ export default function Connections() {
         </div>
       </div>
 
+      {/* Tabbed interface */}
       <Tabs defaultValue="all" className="space-y-4" onValueChange={setActiveTab}>
         <TabsList>
+          {/* All Connections tab with count badge */}
           <TabsTrigger value="all">
             <User className="h-4 w-4 mr-2" />
             All Connections
             {connections && <span className="ml-2 bg-accent text-accent-foreground px-2 py-0.5 rounded-full text-xs">{connections.length}</span>}
           </TabsTrigger>
+          
+          {/* Connection Requests tab with pending count badge */}
           <TabsTrigger value="requests">
             <UserPlus className="h-4 w-4 mr-2" />
             Connection Requests
             {pendingCount > 0 && <span className="ml-2 bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-xs">{pendingCount}</span>}
           </TabsTrigger>
+          
+          {/* Messages tab */}
           <TabsTrigger value="messages">
             <MessageSquare className="h-4 w-4 mr-2" />
             Messages
           </TabsTrigger>
         </TabsList>
 
+        {/* Tab Content */}
         <TabsContent value="all" className="space-y-4">
-          <Card>
-            <CardContent className="p-6">
-              <form onSubmit={handleSearch} className="flex gap-2 mb-6">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search connections..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Button type="submit">Search</Button>
-              </form>
+          {/* Search bar */}
+          <form onSubmit={handleSearch} className="flex gap-2">
+            <Input
+              placeholder="Search connections..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1"
+            />
+            <Button type="submit" variant="secondary">
+              <Search className="h-4 w-4" />
+            </Button>
+          </form>
 
-               <ScrollArea className="h-[500px]">
-                <div className="space-y-3">
-                  <div className="p-4 rounded-lg bg-accent/20 mb-4">
-                    <h3 className="text-sm font-semibold mb-2">Find New Users</h3>
-                    <form onSubmit={(e) => { e.preventDefault(); /* Search functionality */ }} className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          placeholder="Search by username, title, or organization..."
-                          value={discoverTerm}
-                          onChange={(e) => setDiscoverTerm(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                      <Button type="submit">Search</Button>
-                    </form>
-                  </div>
-                  {activeTab === "all" && !searchTerm && (
-                    <div className="p-4 rounded-lg bg-accent/20 mb-4">
-                      <p className="text-sm text-muted-foreground mb-3">Quick Actions</p>
-                      <div className="space-y-2">
-                        {allUsers?.filter(u => u.id !== user?.id).slice(0, 5).map((otherUser) => (
-                          <div key={otherUser.id} className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback>{otherUser.username?.substring(0, 2).toUpperCase()}</AvatarFallback>
-                              </Avatar>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm">{otherUser.username}</span>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={async () => {
-                                  try {
-                                    await apiRequest("POST", "/api/connection-requests", { receiverId: otherUser.id });
-                                    toast({ title: "Connection request sent", description: `Request sent to ${otherUser.username}` });
-                                    queryClient.invalidateQueries({ queryKey: ["/api/connection-pending"] });
-                                  } catch (err: any) {
-                                    toast({ title: "Failed to send request", description: err.message, variant: "destructive" });
-                                  }
-                                }}
-                              >
-                                + Connect
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {filteredConnections?.map((connection) => (
-                    <div key={connection.id} className="flex items-center justify-between p-4 rounded-lg bg-accent/20">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={connection.profileImage} alt={connection.username} />
-                          <AvatarFallback>{connection.username?.substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{connection.username}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{connection.profileType || "User"}</p>
-                        </div>
-                      </div>
-                       <div className="flex gap-2">
-                         <Button
-                           size="sm"
-                           variant="outline"
-                           onClick={async () => {
-                             try {
-                               const res = await apiRequest("POST", "/api/conversations", { otherUserId: connection.id });
-                               const conversation = await res.json();
-                               toast({ title: "Conversation started", description: "You can now message this user" });
-                               queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
-                             } catch (err: any) {
-                               toast({ title: "Failed to start conversation", description: err.message, variant: "destructive" });
-                             }
-                           }}
-                         >
-                           <MessageSquare className="h-4 w-4 mr-2" />
-                           Message
-                         </Button>
-                       </div>
-                    </div>
-                  ))}
-                  {activeTab === "all" && searchTerm && !filteredConnections?.length && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No connections matching "{searchTerm}"</p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+          {/* Connections list */}
+          {filteredConnections && filteredConnections.length > 0 ? (
+            <div className="grid gap-4">
+              {filteredConnections.map((connection) => (
+                <ConnectionCard key={connection.id} user={connection} />
+              ))}
+            </div>
+          ) : (
+            <Card className="p-8 text-center">
+              <p className="text-muted-foreground">No connections yet. Start networking!</p>
+            </Card>
+          )}
         </TabsContent>
 
-        <TabsContent value="requests">
-          <ConnectionRequestList type="received" />
+        <TabsContent value="requests" className="space-y-4">
+          {/* Connection request management */}
+          <ConnectionRequestList requests={pendingRequests || []} />
         </TabsContent>
 
-        <TabsContent value="messages">
+        <TabsContent value="messages" className="space-y-4">
+          {/* Messaging interface */}
           <CommunicationCenter />
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+/**
+ * ConnectionCard Component
+ * 
+ * Displays a single connection with avatar, name, and quick actions.
+ */
+function ConnectionCard({ user }: { user: UserType }) {
+  const avatarFallback = user.username?.substring(0, 2).toUpperCase() || "??";
+
+  return (
+    <Card>
+      <CardContent className="flex items-center gap-4 p-4">
+        {/* User avatar */}
+        {user.profileImage ? (
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={user.profileImage} alt={user.username} />
+            <AvatarFallback>{avatarFallback}</AvatarFallback>
+          </Avatar>
+        ) : (
+          <Avatar className="h-12 w-12 bg-primary text-primary-foreground">
+            <AvatarFallback>{avatarFallback}</AvatarFallback>
+          </Avatar>
+        )}
+
+        {/* User info */}
+        <div className="flex-1 min-w-0">
+          <p className="font-medium truncate">{user.fullName || user.username}</p>
+          <p className="text-sm text-muted-foreground truncate">
+            {user.title || user.profileType || "User"}
+            {user.organization ? ` at ${user.organization}` : ""}
+          </p>
+        </div>
+
+        {/* Message button */}
+        <Button size="sm" variant="outline">
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Message
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

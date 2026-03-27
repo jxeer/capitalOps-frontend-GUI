@@ -1,3 +1,32 @@
+/**
+ * CapitalOps Investor Portal Page
+ * 
+ * Purpose: Dedicated dashboard for investor users to view their investments, allocations,
+ * returns, and discover new investment opportunities.
+ * 
+ * Approach:
+ * - Tabbed interface separating My Portfolio, Available Deals, and Reports
+ * - Shows only deals the investor has allocated to (in Portfolio tab)
+ * - Shows all open/active deals in Available Deals tab for new investments
+ * - Portfolio analytics with returns tracking
+ * 
+ * INVESTOR-SPECIFIC FEATURES:
+ * - View allocated deals with capital commitment and funded amounts
+ * - Track returns (total, YTD, IRR)
+ * - Discover new investment opportunities
+ * - View allocation history and status
+ * 
+ * NOTE:
+ * - Currently uses mock data for returns/analytics (hardcoded mockInvestorData)
+ * - In production, this would come from API endpoints
+ * 
+ * Related Backend Routes:
+ * - GET /api/allocations - Investor's allocations
+ * - GET /api/deals - Available deals
+ * - GET /api/projects - Projects for context
+ * - GET /api/risk-flags - Risk flags affecting allocations
+ */
+
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import {
@@ -23,7 +52,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, getStatusColor, formatDate } from "@/lib/formatters";
 import type { Deal, Project, Asset, Allocation, Investor, RiskFlag } from "@shared/schema";
 
-// Mock investor data - in production this would come from API
+/**
+ * Mock investor data for returns/analytics display
+ * 
+ * TODO: In production, this data should come from backend API
+ * Currently hardcoded for UI development/testing
+ */
 const mockInvestorData = {
   name: "John Smith",
   email: "john.smith@example.com",
@@ -39,20 +73,32 @@ const mockInvestorData = {
   },
 };
 
+/**
+ * Main InvestorPortal Page Component
+ * 
+ * Three main tabs:
+ * 1. "portfolio" - My investments, allocations, and returns
+ * 2. "deals" - Available investment opportunities
+ * 3. "reports" - Performance reports and documents
+ */
 export default function InvestorPortal() {
+  // Fetch data for portfolio and available deals
   const { data: deals, isLoading: dealsLoading } = useQuery<Deal[]>({ queryKey: ["/api/deals"] });
   const { data: projects } = useQuery<Project[]>({ queryKey: ["/api/projects"] });
   const { data: assets } = useQuery<Asset[]>({ queryKey: ["/api/assets"] });
   const { data: allocations, isLoading: allocationsLoading } = useQuery<Allocation[]>({ queryKey: ["/api/allocations"] });
   const { data: riskFlags } = useQuery<RiskFlag[]>({ queryKey: ["/api/risk-flags"] });
+  
+  // Currently selected deal for detail view
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
 
-  // Filter deals that this investor has allocations in
+  // Filter allocations to show only current investor's deals
+  // TODO: In production, backend should filter by authenticated user
   const myDealIds = allocations?.map(a => a.dealId) || [];
   const myDeals = deals?.filter(d => myDealIds.includes(d.id)) || [];
   const myAllocations = allocations || [];
 
-  // Available deals (Open/Active status that investor hasn't invested in)
+  // Available deals: Open/Active deals investor hasn't invested in yet
   const availableDeals = deals?.filter(d =>
     (d.status === "Open" || d.status === "Active") &&
     !myDealIds.includes(d.id)
