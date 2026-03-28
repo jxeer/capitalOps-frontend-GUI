@@ -51,18 +51,16 @@ function getAuthToken(): string | null {
 }
 
 /**
- * Store auth token in both cookie (httpOnly) and localStorage.
- * - Cookie provides XSS protection
- * - localStorage provides backwards compatibility during migration
+ * Store auth token in localStorage.
+ * 
+ * Note: httpOnly cookies cannot be set from JavaScript - they're set by the backend.
+ * The backend sets httpOnly; Secure; SameSite=Lax cookie on login response.
+ * This function stores the token in localStorage for Bearer token authentication.
  * 
  * @param token - The JWT access token to store
  */
 function storeAuthToken(token: string): void {
-  // Store in localStorage for backwards compatibility
   localStorage.setItem("auth_token", token);
-  // Also set httpOnly cookie for XSS protection
-  // Note: We can't set httpOnly from JS, but the backend does this.
-  // Here we just ensure the non-httpOnly version is also available if needed
 }
 
 /**
@@ -170,9 +168,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       // Handle 401: token invalid or expired - clear all auth state
+      // Let the AuthProvider's normal flow handle the redirect
+      // (when user becomes null, ProtectedLayout's useEffect will redirect)
       if (res.status === 401) {
         clearAuthToken();
-        window.location.href = "/auth";
         return null;
       }
       if (!res.ok) throw new Error("Failed to fetch user");
@@ -271,10 +270,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     onSuccess: () => {
-      // Clear React Query cache and redirect to auth page
+      // Clear React Query cache and use client-side navigation to auth page
       queryClient.setQueryData(["/api/user"], null);
       queryClient.clear();
-      window.location.href = "/auth";
+      setLocation("/auth");
     },
   });
 

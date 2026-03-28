@@ -223,14 +223,8 @@ function ProtectedLayout() {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Show loading skeleton while auth state is being determined
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Skeleton className="h-8 w-32" />
-      </div>
-    );
-  }
+  // Return null if not authenticated BEFORE calling any hooks (Rules of Hooks)
+  if (!user) return null;
 
   // Redirect to /auth if not authenticated (using useEffect to avoid side-effects during render)
   useEffect(() => {
@@ -239,7 +233,14 @@ function ProtectedLayout() {
     }
   }, [user, setLocation]);
 
-  if (!user) return null;
+  // Show loading skeleton while auth state is being determined
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Skeleton className="h-8 w-32" />
+      </div>
+    );
+  }
 
   // Render authenticated layout with sidebar and content
   return (

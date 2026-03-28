@@ -17,28 +17,36 @@
 
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { uploadToS3 } from "./s3";
-import { queryClient as queryClientInstance } from "./queryClient";
 
 const API_BASE = (import.meta.env as any).VITE_BACKEND_URL || "";
 const API_KEY = (import.meta.env as any).VITE_COMPAT_API_KEY || "";
 
 /**
- * Get auth token from cookie (set by backend on login).
- * httpOnly cookies cannot be read via JS, but we use a non-httpOnly approach
- * where the backend sets both cookie AND returns the token in the response.
+ * Get auth token from localStorage (primary) or cookie (fallback).
  * 
- * For maximum XSS protection, prefer the httpOnly cookie approach where
- * the backend reads the cookie directly. This function serves as a fallback.
+ * Note: For httpOnly cookies, the browser sends them automatically with fetch
+ * when credentials: 'include' is set. However, we use localStorage for the
+ * Bearer token approach since we need to read the token in JavaScript.
+ * 
+ * The httpOnly cookie approach would require the backend to read the cookie
+ * directly, but flask-jwt-extended's cookie mode requires specific setup.
  */
 function getAuthToken(): string | null {
-  // First try to read from cookie (backend may set this)
+  // Primary: read from localStorage (where we store after login)
+  const localStorageToken = localStorage.getItem("auth_token");
+  if (localStorageToken) {
+    return localStorageToken;
+  }
+  // Fallback: try to read from non-httpOnly cookie (if backend set one)
   const cookies = document.cookie.split("; ");
   const tokenCookie = cookies.find((c) => c.startsWith("capitalops_token="));
   if (tokenCookie) {
-    return tokenCookie.split("=")[1];
+    // Split only on first "=" to handle tokens containing "=" characters
+    const eqIndex = tokenCookie.indexOf("=");
+    const value = tokenCookie.substring(eqIndex + 1);
+    return decodeURIComponent(value || "");
   }
-  // Fallback to localStorage for backwards compatibility during migration
-  return localStorage.getItem("auth_token");
+  return null;
 }
 
 /**
@@ -117,10 +125,9 @@ export const getQueryFn: <T>(options: {
     });
 
     if (res.status === 401) {
-      // Global 401 handler: clear auth state and redirect to /auth
+      // Clear auth state on 401 but DON'T auto-redirect - let AuthProvider handle this
+      // to avoid window.location.href causing full page reloads and render cycles
       clearAuthToken();
-      queryClientInstance.clear();
-      window.location.href = "/auth";
       if (unauthorizedBehavior === "returnNull") {
         return null;
       }
