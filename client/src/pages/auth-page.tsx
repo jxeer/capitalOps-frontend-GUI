@@ -124,10 +124,11 @@ function GoogleSignInButton() {
   const googleClientId = (import.meta.env as any).VITE_GOOGLE_CLIENT_ID || "";
   const { login } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     if (!googleClientId || !backendUrl) return;
-    
+
     const { google } = window as any;
     if (!google) return;
 
@@ -150,8 +151,7 @@ function GoogleSignInButton() {
             localStorage.setItem("auth_token", data.accessToken);
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("user", JSON.stringify(data.user));
-            queryClient.setQueryData(["/api/user"], data.user);
-            window.location.href = "/dashboard";
+            setLocation("/dashboard");
           } else if (data.error) {
             toast({ title: "Sign-in failed", description: data.error, variant: "destructive" });
           }
@@ -161,12 +161,11 @@ function GoogleSignInButton() {
       },
     });
 
-    // Render the Google button directly
     google.accounts.id.renderButton(
       document.getElementById("google-signin-btn"),
       { theme: "outline", size: "large", text: "signin_with", shape: "rectangular" }
     );
-  }, [googleClientId, backendUrl, login, toast]);
+  }, [googleClientId, backendUrl, login, toast, setLocation]);
 
   return (
     <Button
@@ -247,7 +246,7 @@ function LoginForm() {
       } else if (data.accessToken) {
         // No MFA required (shouldn't happen with current backend config)
         localStorage.setItem("auth_token", data.accessToken);
-        window.location.href = "/";
+        setLocation("/");
       } else {
         // Login failed - show error toast
         toast({ title: "Error", description: data.error || "Login failed", variant: "destructive" });
@@ -285,7 +284,7 @@ function LoginForm() {
       if (data.accessToken) {
         // MFA verified - store JWT and redirect to dashboard
         localStorage.setItem("auth_token", data.accessToken);
-        window.location.href = "/dashboard";
+        setLocation("/dashboard");
       } else {
         // MFA verification failed
         toast({ title: "Error", description: data.error || "Invalid code", variant: "destructive" });
