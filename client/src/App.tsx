@@ -221,6 +221,14 @@ const sidebarStyle = {
 
 function ProtectedLayout() {
   const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // Redirect to /auth if not authenticated
+  useEffect(() => {
+    if (!user && !isLoading) {
+      setLocation("/auth");
+    }
+  }, [user, isLoading, setLocation]);
 
   // Show loading skeleton while auth state is being determined
   if (isLoading) {
@@ -231,9 +239,14 @@ function ProtectedLayout() {
     );
   }
 
-  // Don't render anything if not authenticated - let the auth page handle redirect
-  // The /dashboard route is only reached if user is authenticated
-  if (!user) return null;
+  // Show loading while redirecting
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Skeleton className="h-8 w-32" />
+      </div>
+    );
+  }
 
   // Render authenticated layout with sidebar and content
   return (

@@ -9,6 +9,7 @@ import { Building2, Loader2 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/config";
+import { queryClient } from "@/lib/queryClient";
 
 export default function AuthPage() {
   const { user } = useAuth();
@@ -282,8 +283,11 @@ function LoginForm() {
       const data = await res.json();
       
       if (data.accessToken) {
-        // MFA verified - store JWT and redirect to dashboard
+        // MFA verified - store JWT
         localStorage.setItem("auth_token", data.accessToken);
+        // Update React Query cache with user data and invalidate to refresh
+        queryClient.setQueryData(["/api/user"], data.user);
+        queryClient.invalidateQueries();
         setLocation("/dashboard");
       } else {
         // MFA verification failed
