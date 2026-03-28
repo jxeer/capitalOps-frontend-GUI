@@ -20,16 +20,16 @@ export default function AuthPage() {
   const googleError = urlParams.get("error");
 
   if (googleError && googleError === "google_failed") {
-    Promise.resolve().then(() => {
-      toast({ title: "Google sign-in failed", description: "Please try again or use username/password.", variant: "destructive" });
-      window.history.replaceState({}, "", "/auth");
-    });
+    toast({ title: "Google sign-in failed", description: "Please try again or use username/password.", variant: "destructive" });
+    window.history.replaceState({}, "", "/auth");
   }
 
-  if (user) {
-    Promise.resolve().then(() => setLocation("/"));
-    return null;
-  }
+  // Redirect to dashboard if already logged in - useEffect to avoid render side-effects
+  useEffect(() => {
+    if (user) {
+      setLocation("/dashboard");
+    }
+  }, [user, setLocation]);
 
   return (
     <div className="min-h-screen flex">

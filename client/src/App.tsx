@@ -221,17 +221,6 @@ const sidebarStyle = {
 
 function ProtectedLayout() {
   const { user, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
-
-  // Return null if not authenticated BEFORE calling any hooks (Rules of Hooks)
-  if (!user) return null;
-
-  // Redirect to /auth if not authenticated (using useEffect to avoid side-effects during render)
-  useEffect(() => {
-    if (!user) {
-      setLocation("/auth");
-    }
-  }, [user, setLocation]);
 
   // Show loading skeleton while auth state is being determined
   if (isLoading) {
@@ -241,6 +230,10 @@ function ProtectedLayout() {
       </div>
     );
   }
+
+  // Don't render anything if not authenticated - let the auth page handle redirect
+  // The /dashboard route is only reached if user is authenticated
+  if (!user) return null;
 
   // Render authenticated layout with sidebar and content
   return (
