@@ -303,37 +303,29 @@ export default function App() {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <Switch>
-            {/* Splash/marketing page - public */}
-            <Route path="/" component={Splash} />
-            
-            {/* Auth pages - wrapped in AuthProvider */}
-            <Route path="/auth">
-              <AuthProvider>
+          <AuthProvider>
+            <Switch>
+              {/* Splash/marketing page - public */}
+              <Route path="/" component={Splash} />
+
+              {/* Auth pages - use children to maintain AuthProvider context */}
+              <Route path="/auth">
                 <AuthPage />
-              </AuthProvider>
-            </Route>
-            <Route path="/auth/forgot-password">
-              <AuthProvider>
+              </Route>
+              <Route path="/auth/forgot-password">
                 <ForgotPasswordPage />
-              </AuthProvider>
-            </Route>
-            <Route path="/auth/reset-password">
-              <AuthProvider>
+              </Route>
+              <Route path="/auth/reset-password">
                 <ResetPasswordPage />
-              </AuthProvider>
-            </Route>
-            
-            {/* All other routes - protected with authentication */}
-            <Route>
-              <AuthProvider>
-                <ProtectedLayout />
-              </AuthProvider>
-            </Route>
-          </Switch>
-          
-          {/* Toast notifications */}
-          <Toaster />
+              </Route>
+
+              {/* All other routes - protected with authentication */}
+              <Route component={ProtectedLayout} />
+            </Switch>
+
+            {/* Toast notifications */}
+            <Toaster />
+          </AuthProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
