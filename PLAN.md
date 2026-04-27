@@ -1,7 +1,7 @@
 # CapitalOps Implementation Plan
 
-**Last Updated:** 2026-03-27  
-**Status:** Production Deployed - MFA + Email Auth Complete 🎉
+**Last Updated:** 2026-03-27
+**Status:** Production Deployed - Security Fixes Complete 🎉
 
 ---
 
@@ -83,6 +83,7 @@ CapitalOps has been developed over several phases, all now complete:
 | 9 | Google OAuth & Data Isolation Fixes | 2026-03-23 |
 | 10 | AWS S3 File Upload Configuration | 2026-03-23 |
 | 11 | Forgot Password + MFA | 2026-03-27 |
+| 12 | Security & Reliability Fixes (CodeRabbit review) | 2026-03-27 |
 
 ### Phase 12 - Forgot Password + MFA (2026-03-27) ✅
 - Added `MfaCode` model for 6-digit verification codes with 5-minute expiry
@@ -94,6 +95,27 @@ CapitalOps has been developed over several phases, all now complete:
 - Added email field to registration form (was missing - security issue)
 - Backend sends MFA code via Resend when email fails, falls back to on-screen display
 - PostgreSQL: Had to `DROP TYPE mfa_codes` to resolve conflict with SQLAlchemy table creation
+
+### Phase 13 - Security & Reliability Fixes (2026-03-27) ✅
+- **Code Review Fixes:**
+  - Fixed Rules of Hooks violation in ProtectedLayout (useEffect after conditional return)
+  - Fixed cookie parsing to handle values containing `=` characters
+  - Fixed function documentation mismatches
+  - Replaced anchor tags with wouter Link for SPA navigation
+  - Fixed CSS custom property typing
+  - Removed duplicate `/` route from ProtectedLayout
+
+- **Security Enhancements:**
+  - Backend sets auth cookie (`httponly=False` since JS needs to read for Bearer token)
+  - Accept JWTs from both Authorization header AND cookies
+  - Global 401 handler clears auth state (no auto-redirect to prevent loops)
+  - Cookie parsing with proper `indexOf`/`substring` for `=` characters
+
+- **Auth Flow Fixes:**
+  - Single AuthProvider wrapper (was recreating per-route, losing login state)
+  - ProtectedLayout redirects via useEffect instead of returning null (dark screen bug)
+  - auth-page uses queryClient.invalidateQueries() after login to refresh user state
+  - Replaced all `window.location.href` with `setLocation()` to avoid full page reloads
 
 ### Key Accomplishments
 
@@ -164,6 +186,8 @@ CapitalOps has been developed over several phases, all now complete:
 | Railway PostgreSQL backups | ⚠️ Verify in Railway dashboard |
 | AWS S3 for uploads | ✅ Complete |
 | MFA (6-digit codes) | ✅ Complete |
+| Cookie-based auth | ✅ Complete |
+| Global 401 handler | ✅ Complete |
 | Email sending (password reset, MFA) | ⚠️ Domain verification needed for production |
 
 ---
